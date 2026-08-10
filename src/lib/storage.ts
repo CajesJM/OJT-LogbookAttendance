@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   profile: "profile",
   records: "records",
   profileImage: "profile-image",
+  credentials: "credentials",
 } as const;
 
 function openDatabase(): Promise<IDBDatabase> {

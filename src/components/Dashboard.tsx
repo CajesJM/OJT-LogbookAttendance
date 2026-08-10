@@ -30,6 +30,8 @@ export function Dashboard({
   onEditRecord,
 }: Props) {
   const [now, setNow] = useState(() => new Date());
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+  const [typedGreeting, setTypedGreeting] = useState("");
   const totalHours = records.reduce(
     (sum, record) => sum + record.totalHours,
     0,
@@ -44,11 +46,64 @@ export function Dashboard({
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
   const firstName = (profile.fullName || "Trainee").trim().split(" ")[0];
+  const greeting = `${greetingForHour(now.getHours())}, ${firstName}.`;
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setAnimatedProgress(progress);
+      return;
+    }
+    let frame = 0;
+    const startedAt = performance.now();
+    const duration = 950;
+    const animate = (time: number) => {
+      const elapsed = Math.min(1, (time - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - elapsed, 3);
+      setAnimatedProgress(Math.round(progress * eased));
+      if (elapsed < 1) frame = window.requestAnimationFrame(animate);
+    };
+    frame = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frame);
+  }, [progress]);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setTypedGreeting(greeting);
+      return;
+    }
+    let position = 0;
+    let deleting = false;
+    let timer = 0;
+    const type = () => {
+      if (!deleting) {
+        position += 1;
+        setTypedGreeting(greeting.slice(0, position));
+        if (position === greeting.length) {
+          deleting = true;
+          timer = window.setTimeout(type, 1600);
+          return;
+        }
+        timer = window.setTimeout(type, 62);
+        return;
+      }
+      position -= 1;
+      setTypedGreeting(greeting.slice(0, position));
+      if (position === 0) {
+        deleting = false;
+        timer = window.setTimeout(type, 450);
+        return;
+      }
+      timer = window.setTimeout(type, 34);
+    };
+    setTypedGreeting("");
+    timer = window.setTimeout(type, 220);
+    return () => window.clearTimeout(timer);
+  }, [greeting]);
 
   return (
     <main className="page-content dashboard-page">
@@ -61,8 +116,9 @@ export function Dashboard({
               day: "numeric",
             })}
           </p>
-          <h2>
-            {greetingForHour(now.getHours())}, <span>{firstName}.</span>
+          <h2 className="typing-greeting" aria-label={greeting}>
+            <span className="typing-text" aria-hidden="true">{typedGreeting}</span>
+            <i className="typing-cursor" aria-hidden="true" />
           </h2>
           <p>Keep your training record current and ready to submit.</p>
         </div>
@@ -107,12 +163,12 @@ export function Dashboard({
           aria-valuemax={100}
           aria-valuenow={progress}
         >
-          <div className="progress-fill" style={{ width: `${progress}%` }} />
+          <div className="progress-fill" style={{ width: `${animatedProgress}%` }} />
           <span
             className="progress-value"
-            style={{ left: `clamp(22px, ${progress}%, calc(100% - 22px))` }}
+            style={{ left: `clamp(22px, ${animatedProgress}%, calc(100% - 22px))` }}
           >
-            {progress}%
+            {animatedProgress}%
           </span>
         </div>
         <div className="progress-labels">

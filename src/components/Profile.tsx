@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useState } from "react";
-import { Download, LogOut, Pencil, Printer, Save, Trash2, Upload, X } from "lucide-react";
+import { Download, Info, LogOut, Pencil, Printer, Save, Trash2, Upload, X } from "lucide-react";
 import { ProfileAvatar } from "./ProfileAvatar";
+import { AccountHelpModal } from "./ui/AccountHelpModal";
 import type { StudentProfile } from "../types";
 
 type Props = {
@@ -30,6 +31,7 @@ export function Profile({
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<StudentProfile | null>(null);
+  const [showAccountHelp, setShowAccountHelp] = useState(false);
 
   function update<K extends keyof StudentProfile>(
     key: K,
@@ -202,8 +204,18 @@ export function Profile({
 
       <aside className="profile-tools">
         <section className="surface tool-section backup-tool">
-          <p className="section-kicker">Data safety</p>
-          <h2>Backup and restore</h2>
+          <div className="tool-heading-row">
+            <div><p className="section-kicker">Data safety</p><h2>Backup and restore</h2></div>
+            <button
+              className="icon-button account-help-button"
+              type="button"
+              onClick={() => setShowAccountHelp(true)}
+              aria-label="Account and backup information"
+              title="Account and backup information"
+            >
+              <Info size={16} />
+            </button>
+          </div>
           <p className="muted">
             Export a copy before changing devices or clearing browser data.
           </p>
@@ -233,6 +245,7 @@ export function Profile({
           </button>
         </section>
       </aside>
+      <AccountHelpModal open={showAccountHelp} onClose={() => setShowAccountHelp(false)} />
     </main>
   );
 }

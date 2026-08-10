@@ -1,10 +1,17 @@
 export type Tab = "dashboard" | "records" | "profile";
+export type ReportTemplate = "detailed" | "worklog";
 
 export type UserAccount = {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   picture?: string;
+};
+
+export type LocalCredentials = {
+  username: string;
+  salt: string;
+  passwordHash: string;
 };
 
 export type StudentProfile = {

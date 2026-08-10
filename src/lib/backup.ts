@@ -13,7 +13,7 @@ function isUser(value: unknown): value is UserAccount | null {
     isObject(value)
     && typeof value.id === "string"
     && typeof value.name === "string"
-    && typeof value.email === "string"
+    && isOptionalString(value.email)
     && isOptionalString(value.picture)
   );
 }

@@ -1,5 +1,3 @@
-import type { UserAccount } from "../types";
-
 export function calculateHours(timeIn: string, timeOut: string): number {
   if (!timeIn || !timeOut) return 0;
   const [inHour, inMinute] = timeIn.split(":").map(Number);
@@ -11,7 +9,10 @@ export function calculateHours(timeIn: string, timeOut: string): number {
 }
 
 export function formatHours(hours: number): string {
-  return `${hours.toFixed(2).replace(/\.00$/, "")} hrs`;
+  const totalMinutes = Math.max(0, Math.round((Number(hours) || 0) * 60));
+  const wholeHours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${wholeHours}:${String(minutes).padStart(2, "0")} hrs`;
 }
 
 export function formatDate(value: string): string {
@@ -21,19 +22,4 @@ export function formatDate(value: string): string {
     day: "numeric",
     year: "numeric",
   }).format(new Date(`${value}T00:00:00`));
-}
-
-export function parseGoogleCredential(credential: string): UserAccount | null {
-  try {
-    const base64 = credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(atob(base64));
-    return {
-      id: payload.sub,
-      name: payload.name || payload.email,
-      email: payload.email,
-      picture: payload.picture,
-    };
-  } catch {
-    return null;
-  }
 }

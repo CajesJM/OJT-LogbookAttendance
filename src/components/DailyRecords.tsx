@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Edit3, FilePlus2, Search, Trash2, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Edit3, FilePlus2, Search, Trash2, X } from "lucide-react";
 import { createEmptyRecord } from "../lib/defaults";
 import { calculateHours, formatDate, formatHours } from "../lib/format";
 import type { DailyRecord } from "../types";
@@ -39,8 +39,12 @@ export function DailyRecords({
     initialRecord?.id || null,
   );
   const [search, setSearch] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [activeMonth, setActiveMonth] = useState("all");
+  const [recordsExiting, setRecordsExiting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const scrollPositionRef = useRef(0);
+  const monthChangeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!initialRecord) return;
@@ -59,11 +63,24 @@ export function DailyRecords({
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [editingId]);
 
+  const monthOptions = useMemo(() => {
+    const months = [...new Set(records.map((record) => record.date.slice(0, 7)).filter(Boolean))]
+      .sort((a, b) => b.localeCompare(a));
+    return months.map((value) => ({
+      value,
+      label: new Date(`${value}-01T00:00:00`).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+    }));
+  }, [records]);
+
   const filteredRecords = useMemo(() => {
     const query = search.trim().toLowerCase();
     return [...records]
       .sort((a, b) => b.date.localeCompare(a.date))
       .filter((record) => {
+        if (activeMonth !== "all" && !record.date.startsWith(activeMonth)) return false;
         if (!query) return true;
         return [
           record.date,
@@ -77,7 +94,7 @@ export function DailyRecords({
           .toLowerCase()
           .includes(query);
       });
-  }, [records, search]);
+  }, [records, search, activeMonth]);
   const pageCount = Math.max(1, Math.ceil(filteredRecords.length / RECORDS_PER_PAGE));
   const displayedPage = Math.min(currentPage, pageCount);
   const paginatedRecords = filteredRecords.slice(
@@ -87,7 +104,36 @@ export function DailyRecords({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, activeMonth]);
+
+  useEffect(() => {
+    if (selectedMonth !== "all" && !monthOptions.some((month) => month.value === selectedMonth)) {
+      setSelectedMonth("all");
+      setActiveMonth("all");
+    }
+  }, [monthOptions, selectedMonth]);
+
+  useEffect(() => () => {
+    if (monthChangeTimerRef.current !== null) window.clearTimeout(monthChangeTimerRef.current);
+  }, []);
+
+  function changeMonth(nextMonth: string) {
+    if (nextMonth === selectedMonth) return;
+    setSelectedMonth(nextMonth);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setActiveMonth(nextMonth);
+      setCurrentPage(1);
+      return;
+    }
+    setRecordsExiting(true);
+    if (monthChangeTimerRef.current !== null) window.clearTimeout(monthChangeTimerRef.current);
+    monthChangeTimerRef.current = window.setTimeout(() => {
+      setActiveMonth(nextMonth);
+      setCurrentPage(1);
+      setRecordsExiting(false);
+      monthChangeTimerRef.current = null;
+    }, 320);
+  }
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, pageCount));
@@ -267,20 +313,42 @@ export function DailyRecords({
               <span className="count-badge">{records.length}</span>
             </h2>
           </div>
-          <div className="search-box">
-            <Search size={18} />
-            <input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="Search records"
-              aria-label="Search records"
-            />
+          <div className="records-filter-bar">
+            {monthOptions.length > 1 && (
+              <div className="month-filter">
+                <CalendarDays size={17} aria-hidden="true" />
+                <select
+                  value={selectedMonth}
+                  onChange={(event) => {
+                    changeMonth(event.target.value);
+                  }}
+                  aria-label="Filter records by month"
+                >
+                  <option value="all">All months</option>
+                  {monthOptions.map((month) => (
+                    <option value={month.value} key={month.value}>{month.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="search-box">
+              <Search size={18} />
+              <input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search records"
+                aria-label="Search records"
+              />
+            </div>
           </div>
         </div>
-        <div className="record-list">
+        <div
+          className={`record-list records-animated${recordsExiting ? " records-exiting" : ""}`}
+          key={`${activeMonth}-${displayedPage}`}
+        >
           {filteredRecords.length === 0 ? (
             <div className="empty-state">
               <Search size={28} />
@@ -289,7 +357,7 @@ export function DailyRecords({
               </h3>
               <p>
                 {records.length
-                  ? "Try a different search term."
+                  ? "Try another search term or month."
                   : "Complete the form to add your first entry."}
               </p>
             </div>
