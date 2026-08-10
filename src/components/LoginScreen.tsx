@@ -1,19 +1,23 @@
 import { FormEvent, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Info, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Info, LockKeyhole, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import logoUrl from "../assets/ojt-logbook-logo.svg";
 import { AccountHelpModal } from "./ui/AccountHelpModal";
+import { ClearBrowserDataModal } from "./ui/ClearBrowserDataModal";
 
 type Props = {
   onLogin: (username: string, password: string) => Promise<boolean>;
   onError: (message: string) => void;
+  hasLocalAccount: boolean;
+  onClearData: () => Promise<boolean>;
 };
 
-export function LoginScreen({ onLogin, onError }: Props) {
+export function LoginScreen({ onLogin, onError, hasLocalAccount, onClearData }: Props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showAccountHelp, setShowAccountHelp] = useState(false);
+  const [showClearData, setShowClearData] = useState(false);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -49,15 +53,28 @@ export function LoginScreen({ onLogin, onError }: Props) {
           </div>
         </div>
         <div className="login-form-panel">
-          <button
-            className="icon-button account-help-button login-help-button"
-            type="button"
-            onClick={() => setShowAccountHelp(true)}
-            aria-label="Account and backup information"
-            title="Account and backup information"
-          >
-            <Info size={17} />
-          </button>
+          <div className="login-panel-actions">
+            {hasLocalAccount && (
+              <button
+                className="icon-button login-reset-button"
+                type="button"
+                onClick={() => setShowClearData(true)}
+                aria-label="Delete local account and browser data"
+                title="Delete local account and browser data"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+            <button
+              className="icon-button account-help-button"
+              type="button"
+              onClick={() => setShowAccountHelp(true)}
+              aria-label="Account and backup information"
+              title="Account and backup information"
+            >
+              <Info size={17} />
+            </button>
+          </div>
           <img className="login-logo" src={logoUrl} alt="OJT Logbook" />
           <div className="login-heading">
             <p className="eyebrow">Welcome</p>
@@ -111,6 +128,7 @@ export function LoginScreen({ onLogin, onError }: Props) {
         </div>
       </section>
       <AccountHelpModal open={showAccountHelp} onClose={() => setShowAccountHelp(false)} />
+      <ClearBrowserDataModal open={showClearData} onClose={() => setShowClearData(false)} onClear={onClearData} />
     </main>
   );
 }

@@ -21,6 +21,7 @@ import { downloadOjtReportPdf } from "./lib/pdf";
 import { downloadOjtReportDocx } from "./lib/docx";
 import {
   getStoredValue,
+  clearStoredData,
   setStoredValue,
   setStoredValues,
   STORAGE_KEYS,
@@ -43,6 +44,7 @@ function App() {
   const [recordToEdit, setRecordToEdit] = useState<DailyRecord | null>(null);
   const [profileImage, setProfileImage] = useState<Blob | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasLocalAccount, setHasLocalAccount] = useState(false);
   const [reportAction, setReportAction] = useState<ReportAction | null>(null);
   const [separateReportMonths, setSeparateReportMonths] = useState(false);
   const [reportFormat, setReportFormat] = useState<ReportFormat>("pdf");
@@ -57,12 +59,14 @@ function App() {
       getStoredValue<StudentProfile>(STORAGE_KEYS.profile, emptyProfile),
       getStoredValue<DailyRecord[]>(STORAGE_KEYS.records, []),
       getStoredValue<Blob | null>(STORAGE_KEYS.profileImage, null),
+      getStoredValue<LocalCredentials | null>(STORAGE_KEYS.credentials, null),
     ])
-      .then(([savedUser, savedProfile, savedRecords, savedProfileImage]) => {
+      .then(([savedUser, savedProfile, savedRecords, savedProfileImage, savedCredentials]) => {
         setUser(savedUser);
         setProfile(savedProfile);
         setRecords(savedRecords);
         setProfileImage(savedProfileImage);
+        setHasLocalAccount(Boolean(savedCredentials));
       })
       .catch(() =>
         showToast("Your saved browser data could not be loaded.", "error"),
@@ -108,6 +112,7 @@ function App() {
         ]);
         setUser(account);
         setProfile(nextProfile);
+        setHasLocalAccount(true);
         showToast(
           isNewAccount
             ? "Your local account is ready."
@@ -202,6 +207,24 @@ function App() {
     setUser(null);
     setActiveTab("dashboard");
     showToast("You have been signed out.", "info");
+  }
+
+  async function clearLocalBrowserData(): Promise<boolean> {
+    try {
+      await clearStoredData();
+      setUser(null);
+      setProfile(emptyProfile);
+      setRecords([]);
+      setProfileImage(null);
+      setRecordToEdit(null);
+      setActiveTab("dashboard");
+      setHasLocalAccount(false);
+      showToast("Local account and browser data deleted.", "success");
+      return true;
+    } catch {
+      showToast("Browser data could not be deleted. Please try again.", "error");
+      return false;
+    }
   }
 
   async function exportBackup() {
@@ -356,7 +379,12 @@ function App() {
   return (
     <>
       {!user ? (
-        <LoginScreen onLogin={handleLogin} onError={handleLoginError} />
+        <LoginScreen
+          onLogin={handleLogin}
+          onError={handleLoginError}
+          hasLocalAccount={hasLocalAccount}
+          onClearData={clearLocalBrowserData}
+        />
       ) : (
         <div className="app-shell">
           {activeTab === "dashboard" && (

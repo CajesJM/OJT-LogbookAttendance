@@ -74,3 +74,23 @@ export async function setStoredValues(entries: ReadonlyArray<readonly [string, u
     };
   });
 }
+
+export async function clearStoredData(): Promise<void> {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    transaction.objectStore(STORE_NAME).clear();
+    transaction.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+    transaction.onerror = () => {
+      db.close();
+      reject(transaction.error);
+    };
+    transaction.onabort = () => {
+      db.close();
+      reject(transaction.error || new Error("Storage reset aborted"));
+    };
+  });
+}
