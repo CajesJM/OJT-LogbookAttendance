@@ -8,6 +8,7 @@ import { PrintReport } from "./components/PrintReport";
 import { Profile } from "./components/Profile";
 import { ProfileAvatar } from "./components/ProfileAvatar";
 import { ConfirmModal } from "./components/ui/ConfirmModal";
+import { ImageCropModal } from "./components/ui/ImageCropModal";
 import { ReportOptionsModal, type ReportAction, type ReportFormat } from "./components/ui/ReportOptionsModal";
 import { ToastViewport } from "./components/ui/ToastViewport";
 import { useConfirm } from "./hooks/useConfirm";
@@ -43,6 +44,7 @@ function App() {
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [recordToEdit, setRecordToEdit] = useState<DailyRecord | null>(null);
   const [profileImage, setProfileImage] = useState<Blob | null>(null);
+  const [pendingProfileImage, setPendingProfileImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasLocalAccount, setHasLocalAccount] = useState(false);
   const [reportAction, setReportAction] = useState<ReportAction | null>(null);
@@ -293,16 +295,20 @@ function App() {
     }
   }
 
-  async function updateProfileImage(file: File) {
+  async function selectProfileImage(file: File): Promise<void> {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       showToast("Choose a JPG, PNG, or WebP image.", "error");
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      showToast("Profile images must be smaller than 2 MB.", "error");
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("Choose an image smaller than 10 MB.", "error");
       return;
     }
+    setPendingProfileImage(file);
+  }
+
+  async function saveCroppedProfileImage(file: File) {
     const approved = await confirm({
       title: profileImage
         ? "Replace your profile photo?"
@@ -312,9 +318,14 @@ function App() {
       confirmLabel: profileImage ? "Replace photo" : "Save photo",
     });
     if (!approved) return;
-    await setStoredValue(STORAGE_KEYS.profileImage, file);
-    setProfileImage(file);
-    showToast("Profile photo saved on this device.", "success");
+    try {
+      await setStoredValue(STORAGE_KEYS.profileImage, file);
+      setProfileImage(file);
+      setPendingProfileImage(null);
+      showToast("Profile photo saved on this device.", "success");
+    } catch {
+      showToast("The profile photo could not be saved.", "error");
+    }
   }
 
   async function removeProfileImage() {
@@ -393,7 +404,7 @@ function App() {
                 <ProfileAvatar
                   imageUrl={profileImageUrl}
                   name={profile.fullName || user.name}
-                  onSelect={updateProfileImage}
+                  onSelect={selectProfileImage}
                 />
                 <div>
                   <p>Personal OJT Logbook</p>
@@ -451,7 +462,7 @@ function App() {
               onImport={importBackup}
               onPrint={() => setReportAction("print")}
               profileImageUrl={profileImageUrl}
-              onProfileImageSelect={updateProfileImage}
+              onProfileImageSelect={selectProfileImage}
               onProfileImageRemove={removeProfileImage}
             />
           )}
@@ -466,6 +477,11 @@ function App() {
             onTemplateChange={setReportTemplate}
             onCancel={() => setReportAction(null)}
             onConfirm={createReport}
+          />
+          <ImageCropModal
+            file={pendingProfileImage}
+            onCancel={() => setPendingProfileImage(null)}
+            onApply={saveCroppedProfileImage}
           />
         </div>
       )}

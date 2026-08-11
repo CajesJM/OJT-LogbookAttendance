@@ -5,11 +5,11 @@ export const emptyProfile: StudentProfile = {
   email: "",
   school: "",
   course: "",
-  companyName: "TIMGAS",
+  companyName: "",
   department: "",
   supervisorName: "",
   ojtStartDate: "",
-  requiredHours: 300,
+  requiredHours: 0,
 };
 
 export function createEmptyRecord(): DailyRecord {

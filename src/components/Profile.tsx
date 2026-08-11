@@ -189,9 +189,11 @@ export function Profile({
             <input
               type="number"
               min="1"
-              value={profile.requiredHours}
+              value={profile.requiredHours > 0 ? profile.requiredHours : ""}
+              placeholder="Enter required OJT hours"
               onChange={(e) => update("requiredHours", Number(e.target.value))}
               readOnly={!isEditing}
+              required
             />
           </label>
           {isEditing && (
