@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   records: "records",
   profileImage: "profile-image",
   credentials: "credentials",
+  loginRateLimit: "login-rate-limit",
 } as const;
 
 function openDatabase(): Promise<IDBDatabase> {
@@ -28,7 +29,8 @@ export async function getStoredValue<T>(key: string, fallback: T): Promise<T> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, "readonly");
     const request = transaction.objectStore(STORE_NAME).get(key);
-    request.onsuccess = () => resolve((request.result as T | undefined) ?? fallback);
+    request.onsuccess = () =>
+      resolve((request.result as T | undefined) ?? fallback);
     request.onerror = () => reject(request.error);
     transaction.oncomplete = () => db.close();
     transaction.onerror = () => {
@@ -54,7 +56,9 @@ export async function setStoredValue<T>(key: string, value: T): Promise<void> {
   });
 }
 
-export async function setStoredValues(entries: ReadonlyArray<readonly [string, unknown]>): Promise<void> {
+export async function setStoredValues(
+  entries: ReadonlyArray<readonly [string, unknown]>,
+): Promise<void> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, "readwrite");

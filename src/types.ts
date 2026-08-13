@@ -14,6 +14,11 @@ export type LocalCredentials = {
   passwordHash: string;
 };
 
+export type LoginRateLimit = {
+  failedAttempts: number;
+  lockedUntil: number | null;
+};
+
 export type StudentProfile = {
   fullName: string;
   email: string;

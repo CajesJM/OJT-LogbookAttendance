@@ -1,5 +1,15 @@
-import { FormEvent, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Info, LockKeyhole, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import {
+  ArrowRight,
+  Clock3,
+  Eye,
+  EyeOff,
+  Info,
+  LockKeyhole,
+  ShieldCheck,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import logoUrl from "../assets/ojt-logbook-logo.svg";
 import { AccountHelpModal } from "./ui/AccountHelpModal";
 import { ClearBrowserDataModal } from "./ui/ClearBrowserDataModal";
@@ -8,19 +18,44 @@ type Props = {
   onLogin: (username: string, password: string) => Promise<boolean>;
   onError: (message: string) => void;
   hasLocalAccount: boolean;
+  lockedUntil: number | null;
   onClearData: () => Promise<boolean>;
 };
 
-export function LoginScreen({ onLogin, onError, hasLocalAccount, onClearData }: Props) {
+export function LoginScreen({
+  onLogin,
+  onError,
+  hasLocalAccount,
+  lockedUntil,
+  onClearData,
+}: Props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showAccountHelp, setShowAccountHelp] = useState(false);
   const [showClearData, setShowClearData] = useState(false);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!lockedUntil || lockedUntil <= Date.now()) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [lockedUntil]);
+
+  const remainingSeconds = lockedUntil
+    ? Math.max(0, Math.ceil((lockedUntil - now) / 1000))
+    : 0;
+  const isRateLimited = remainingSeconds > 0;
+  const countdown = `${String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:${String(remainingSeconds % 60).padStart(2, "0")}`;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (isRateLimited) {
+      onError(`Sign-in is temporarily paused. Try again in ${countdown}.`);
+      return;
+    }
     const cleanUsername = username.trim();
     if (cleanUsername.length < 3) {
       onError("Username must contain at least 3 characters.");
@@ -45,7 +80,10 @@ export function LoginScreen({ onLogin, onError, hasLocalAccount, onClearData }: 
           <div className="login-brand-copy">
             <p className="login-brand-kicker">Your OJT companion</p>
             <h1>Keep every training day accounted for.</h1>
-            <p>Build a clear, reliable record of your attendance and daily experience.</p>
+            <p>
+              Build a clear, reliable record of your attendance and daily
+              experience.
+            </p>
           </div>
           <div className="login-brand-note">
             <ShieldCheck size={18} aria-hidden="true" />
@@ -79,7 +117,9 @@ export function LoginScreen({ onLogin, onError, hasLocalAccount, onClearData }: 
           <div className="login-heading">
             <p className="eyebrow">Welcome</p>
             <h2>Sign in to your logbook</h2>
-            <p className="muted">Continue where you left off or create your local account.</p>
+            <p className="muted">
+              Continue where you left off or create your local account.
+            </p>
           </div>
           <form className="login-form" onSubmit={submit}>
             <div className="login-field">
@@ -119,16 +159,46 @@ export function LoginScreen({ onLogin, onError, hasLocalAccount, onClearData }: 
                 </button>
               </div>
             </div>
-            <button className="button primary login-submit" type="submit" disabled={submitting}>
-              <span>{submitting ? "Signing in..." : "Sign in"}</span>
-              {!submitting && <ArrowRight size={18} aria-hidden="true" />}
+            {isRateLimited && (
+              <p className="login-rate-limit" role="status">
+                <Clock3 size={16} aria-hidden="true" />
+                <span>
+                  Too many incorrect attempts. Try again in{" "}
+                  <strong>{countdown}</strong>.
+                </span>
+              </p>
+            )}
+            <button
+              className="button primary login-submit"
+              type="submit"
+              disabled={submitting || isRateLimited}
+            >
+              <span>
+                {submitting
+                  ? "Signing in..."
+                  : isRateLimited
+                    ? `Try again in ${countdown}`
+                    : "Sign in"}
+              </span>
+              {!submitting && !isRateLimited && (
+                <ArrowRight size={18} aria-hidden="true" />
+              )}
             </button>
           </form>
-          <p className="login-storage-note">Your records stay in this browser unless you export a backup.</p>
+          <p className="login-storage-note">
+            Your records stay in this browser unless you export a backup.
+          </p>
         </div>
       </section>
-      <AccountHelpModal open={showAccountHelp} onClose={() => setShowAccountHelp(false)} />
-      <ClearBrowserDataModal open={showClearData} onClose={() => setShowClearData(false)} onClear={onClearData} />
+      <AccountHelpModal
+        open={showAccountHelp}
+        onClose={() => setShowAccountHelp(false)}
+      />
+      <ClearBrowserDataModal
+        open={showClearData}
+        onClose={() => setShowClearData(false)}
+        onClear={onClearData}
+      />
     </main>
   );
 }

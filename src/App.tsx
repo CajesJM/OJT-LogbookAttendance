@@ -9,7 +9,11 @@ import { Profile } from "./components/Profile";
 import { ProfileAvatar } from "./components/ProfileAvatar";
 import { ConfirmModal } from "./components/ui/ConfirmModal";
 import { ImageCropModal } from "./components/ui/ImageCropModal";
-import { ReportOptionsModal, type ReportAction, type ReportFormat } from "./components/ui/ReportOptionsModal";
+import {
+  ReportOptionsModal,
+  type ReportAction,
+  type ReportFormat,
+} from "./components/ui/ReportOptionsModal";
 import { ToastViewport } from "./components/ui/ToastViewport";
 import { useConfirm } from "./hooks/useConfirm";
 import { useObjectUrl } from "./hooks/useObjectUrl";
@@ -30,12 +34,20 @@ import {
 import type {
   BackupData,
   DailyRecord,
+  LoginRateLimit,
   LocalCredentials,
   StudentProfile,
   Tab,
   UserAccount,
   ReportTemplate,
 } from "./types";
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCK_DURATION_MS = 60 * 1000;
+const EMPTY_LOGIN_RATE_LIMIT: LoginRateLimit = {
+  failedAttempts: 0,
+  lockedUntil: null,
+};
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
@@ -44,13 +56,19 @@ function App() {
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [recordToEdit, setRecordToEdit] = useState<DailyRecord | null>(null);
   const [profileImage, setProfileImage] = useState<Blob | null>(null);
-  const [pendingProfileImage, setPendingProfileImage] = useState<File | null>(null);
+  const [pendingProfileImage, setPendingProfileImage] = useState<File | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [hasLocalAccount, setHasLocalAccount] = useState(false);
+  const [loginRateLimit, setLoginRateLimit] = useState<LoginRateLimit>(
+    EMPTY_LOGIN_RATE_LIMIT,
+  );
   const [reportAction, setReportAction] = useState<ReportAction | null>(null);
   const [separateReportMonths, setSeparateReportMonths] = useState(false);
   const [reportFormat, setReportFormat] = useState<ReportFormat>("pdf");
-  const [reportTemplate, setReportTemplate] = useState<ReportTemplate>("detailed");
+  const [reportTemplate, setReportTemplate] =
+    useState<ReportTemplate>("detailed");
   const { toasts, showToast, dismissToast } = useToast();
   const { dialog, confirm, accept, cancel } = useConfirm();
   const profileImageUrl = useObjectUrl(profileImage);
@@ -62,14 +80,28 @@ function App() {
       getStoredValue<DailyRecord[]>(STORAGE_KEYS.records, []),
       getStoredValue<Blob | null>(STORAGE_KEYS.profileImage, null),
       getStoredValue<LocalCredentials | null>(STORAGE_KEYS.credentials, null),
+      getStoredValue<LoginRateLimit>(
+        STORAGE_KEYS.loginRateLimit,
+        EMPTY_LOGIN_RATE_LIMIT,
+      ),
     ])
-      .then(([savedUser, savedProfile, savedRecords, savedProfileImage, savedCredentials]) => {
-        setUser(savedUser);
-        setProfile(savedProfile);
-        setRecords(savedRecords);
-        setProfileImage(savedProfileImage);
-        setHasLocalAccount(Boolean(savedCredentials));
-      })
+      .then(
+        ([
+          savedUser,
+          savedProfile,
+          savedRecords,
+          savedProfileImage,
+          savedCredentials,
+          savedLoginRateLimit,
+        ]) => {
+          setUser(savedUser);
+          setProfile(savedProfile);
+          setRecords(savedRecords);
+          setProfileImage(savedProfileImage);
+          setHasLocalAccount(Boolean(savedCredentials));
+          setLoginRateLimit(savedLoginRateLimit);
+        },
+      )
       .catch(() =>
         showToast("Your saved browser data could not be loaded.", "error"),
       )
@@ -79,21 +111,61 @@ function App() {
   const handleLogin = useCallback(
     async (username: string, password: string): Promise<boolean> => {
       try {
-        const [savedCredentials, savedProfile] = await Promise.all([
-          getStoredValue<LocalCredentials | null>(
-            STORAGE_KEYS.credentials,
-            null,
-          ),
-          getStoredValue<StudentProfile>(STORAGE_KEYS.profile, emptyProfile),
-        ]);
+        const [savedCredentials, savedProfile, savedLoginRateLimit] =
+          await Promise.all([
+            getStoredValue<LocalCredentials | null>(
+              STORAGE_KEYS.credentials,
+              null,
+            ),
+            getStoredValue<StudentProfile>(STORAGE_KEYS.profile, emptyProfile),
+            getStoredValue<LoginRateLimit>(
+              STORAGE_KEYS.loginRateLimit,
+              EMPTY_LOGIN_RATE_LIMIT,
+            ),
+          ]);
         const isNewAccount = savedCredentials === null;
+        const now = Date.now();
+        if (
+          !isNewAccount &&
+          savedLoginRateLimit.lockedUntil &&
+          savedLoginRateLimit.lockedUntil > now
+        ) {
+          setLoginRateLimit(savedLoginRateLimit);
+          const seconds = Math.ceil(
+            (savedLoginRateLimit.lockedUntil - now) / 1000,
+          );
+          showToast(
+            `Too many incorrect attempts. Try again in ${Math.ceil(seconds / 60)} minute${seconds > 60 ? "s" : ""}.`,
+            "error",
+          );
+          return false;
+        }
+        const activeRateLimit = savedLoginRateLimit.lockedUntil
+          ? EMPTY_LOGIN_RATE_LIMIT
+          : savedLoginRateLimit;
         const credentials =
           savedCredentials || (await createCredentials(username, password));
         if (
           !isNewAccount &&
           !(await verifyCredentials(credentials, username, password))
         ) {
-          showToast("Incorrect username or password.", "error");
+          const failedAttempts = activeRateLimit.failedAttempts + 1;
+          const attemptsRemaining = MAX_LOGIN_ATTEMPTS - failedAttempts;
+          const nextRateLimit: LoginRateLimit =
+            attemptsRemaining <= 0
+              ? {
+                  failedAttempts: MAX_LOGIN_ATTEMPTS,
+                  lockedUntil: now + LOGIN_LOCK_DURATION_MS,
+                }
+              : { failedAttempts, lockedUntil: null };
+          await setStoredValue(STORAGE_KEYS.loginRateLimit, nextRateLimit);
+          setLoginRateLimit(nextRateLimit);
+          showToast(
+            attemptsRemaining <= 0
+              ? "Too many incorrect attempts. Sign-in is paused for 60 seconds."
+              : `Incorrect username or password. ${attemptsRemaining} attempt${attemptsRemaining === 1 ? "" : "s"} remaining.`,
+            "error",
+          );
           return false;
         }
 
@@ -111,10 +183,12 @@ function App() {
           [STORAGE_KEYS.credentials, credentials],
           [STORAGE_KEYS.user, account],
           [STORAGE_KEYS.profile, nextProfile],
+          [STORAGE_KEYS.loginRateLimit, EMPTY_LOGIN_RATE_LIMIT],
         ]);
         setUser(account);
         setProfile(nextProfile);
         setHasLocalAccount(true);
+        setLoginRateLimit(EMPTY_LOGIN_RATE_LIMIT);
         showToast(
           isNewAccount
             ? "Your local account is ready."
@@ -221,10 +295,14 @@ function App() {
       setRecordToEdit(null);
       setActiveTab("dashboard");
       setHasLocalAccount(false);
+      setLoginRateLimit(EMPTY_LOGIN_RATE_LIMIT);
       showToast("Local account and browser data deleted.", "success");
       return true;
     } catch {
-      showToast("Browser data could not be deleted. Please try again.", "error");
+      showToast(
+        "Browser data could not be deleted. Please try again.",
+        "error",
+      );
       return false;
     }
   }
@@ -343,7 +421,13 @@ function App() {
 
   async function downloadPdf(separateByMonth = separateReportMonths) {
     try {
-      await downloadOjtReportPdf({ user: user!, profile, records, separateByMonth, template: reportTemplate });
+      await downloadOjtReportPdf({
+        user: user!,
+        profile,
+        records,
+        separateByMonth,
+        template: reportTemplate,
+      });
       showToast("PDF report downloaded.", "success");
     } catch {
       showToast("The PDF report could not be created.", "error");
@@ -366,7 +450,13 @@ function App() {
 
   async function downloadDocx(separateByMonth = separateReportMonths) {
     try {
-      await downloadOjtReportDocx({ user: user!, profile, records, separateByMonth, template: reportTemplate });
+      await downloadOjtReportDocx({
+        user: user!,
+        profile,
+        records,
+        separateByMonth,
+        template: reportTemplate,
+      });
       showToast("Word report downloaded.", "success");
     } catch {
       showToast("The Word report could not be created.", "error");
@@ -394,6 +484,7 @@ function App() {
           onLogin={handleLogin}
           onError={handleLoginError}
           hasLocalAccount={hasLocalAccount}
+          lockedUntil={loginRateLimit.lockedUntil}
           onClearData={clearLocalBrowserData}
         />
       ) : (
@@ -433,7 +524,13 @@ function App() {
               </div>
             </header>
           )}
-          <PrintReport user={user} profile={profile} records={records} separateByMonth={separateReportMonths} template={reportTemplate} />
+          <PrintReport
+            user={user}
+            profile={profile}
+            records={records}
+            separateByMonth={separateReportMonths}
+            template={reportTemplate}
+          />
           {activeTab === "dashboard" && (
             <Dashboard
               records={records}
