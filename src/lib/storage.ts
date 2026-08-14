@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   profileImage: "profile-image",
   credentials: "credentials",
   loginRateLimit: "login-rate-limit",
+  backupReminder: "backup-reminder",
 } as const;
 
 function openDatabase(): Promise<IDBDatabase> {

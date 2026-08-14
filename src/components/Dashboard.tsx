@@ -4,6 +4,8 @@ import {
   CalendarCheck2,
   CalendarClock,
   Clock3,
+  Download,
+  HardDriveDownload,
   Target,
 } from "lucide-react";
 import { formatDate, formatHours } from "../lib/format";
@@ -15,6 +17,9 @@ type Props = {
   profile: StudentProfile;
   onOpenRecords: () => void;
   onEditRecord: (record: DailyRecord) => void;
+  showBackupReminder: boolean;
+  onExportBackup: () => Promise<void>;
+  onSnoozeBackup: () => Promise<void>;
 };
 
 function greetingForHour(hour: number) {
@@ -28,6 +33,9 @@ export function Dashboard({
   profile,
   onOpenRecords,
   onEditRecord,
+  showBackupReminder,
+  onExportBackup,
+  onSnoozeBackup,
 }: Props) {
   const [now, setNow] = useState(() => new Date());
   const [animatedProgress, setAnimatedProgress] = useState(0);
@@ -130,6 +138,26 @@ export function Dashboard({
           <ArrowRight size={22} />
         </button>
       </section>
+
+      {showBackupReminder && (
+        <section className="backup-reminder-banner" aria-labelledby="backup-banner-title">
+          <div className="backup-reminder-symbol">
+            <HardDriveDownload size={22} aria-hidden="true" />
+          </div>
+          <div className="backup-reminder-copy">
+            <h2 id="backup-banner-title">Keep your logbook protected</h2>
+            <p>It has been at least seven days since your records were backed up. Export a copy before browser data is cleared or this device becomes unavailable.</p>
+          </div>
+          <div className="backup-reminder-actions">
+            <button className="button secondary" onClick={() => void onSnoozeBackup()}>
+              <Clock3 size={16} /> Remind me later
+            </button>
+            <button className="button primary" onClick={() => void onExportBackup()}>
+              <Download size={17} /> Export backup
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="dashboard-widgets" aria-label="OJT activity calendar">
         <MiniCalendar records={records} ojtStartDate={profile.ojtStartDate} />

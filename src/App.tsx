@@ -9,6 +9,7 @@ import { Profile } from "./components/Profile";
 import { ProfileAvatar } from "./components/ProfileAvatar";
 import { ConfirmModal } from "./components/ui/ConfirmModal";
 import { ImageCropModal } from "./components/ui/ImageCropModal";
+import { BackupReminderModal } from "./components/ui/BackupReminderModal";
 import {
   ReportOptionsModal,
   type ReportAction,
@@ -21,6 +22,11 @@ import { useToast } from "./hooks/useToast";
 import { emptyProfile } from "./lib/defaults";
 import { parseBackup } from "./lib/backup";
 import { createCredentials, verifyCredentials } from "./lib/auth";
+import {
+  createBackupSnooze,
+  EMPTY_BACKUP_REMINDER,
+  getBackupReminderStatus,
+} from "./lib/backupReminder";
 import { blobToDataUrl, dataUrlToBlob } from "./lib/files";
 import { downloadOjtReportPdf } from "./lib/pdf";
 import { downloadOjtReportDocx } from "./lib/docx";
@@ -33,6 +39,7 @@ import {
 } from "./lib/storage";
 import type {
   BackupData,
+  BackupReminderState,
   DailyRecord,
   LoginRateLimit,
   LocalCredentials,
@@ -64,6 +71,10 @@ function App() {
   const [loginRateLimit, setLoginRateLimit] = useState<LoginRateLimit>(
     EMPTY_LOGIN_RATE_LIMIT,
   );
+  const [backupReminder, setBackupReminder] = useState<BackupReminderState>(
+    EMPTY_BACKUP_REMINDER,
+  );
+  const [backupClock, setBackupClock] = useState(Date.now());
   const [reportAction, setReportAction] = useState<ReportAction | null>(null);
   const [separateReportMonths, setSeparateReportMonths] = useState(false);
   const [reportFormat, setReportFormat] = useState<ReportFormat>("pdf");
@@ -72,6 +83,12 @@ function App() {
   const { toasts, showToast, dismissToast } = useToast();
   const { dialog, confirm, accept, cancel } = useConfirm();
   const profileImageUrl = useObjectUrl(profileImage);
+  const backupStatus = getBackupReminderStatus(records, backupReminder, backupClock);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setBackupClock(Date.now()), 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -84,6 +101,10 @@ function App() {
         STORAGE_KEYS.loginRateLimit,
         EMPTY_LOGIN_RATE_LIMIT,
       ),
+      getStoredValue<BackupReminderState>(
+        STORAGE_KEYS.backupReminder,
+        EMPTY_BACKUP_REMINDER,
+      ),
     ])
       .then(
         ([
@@ -93,6 +114,7 @@ function App() {
           savedProfileImage,
           savedCredentials,
           savedLoginRateLimit,
+          savedBackupReminder,
         ]) => {
           setUser(savedUser);
           setProfile(savedProfile);
@@ -100,6 +122,7 @@ function App() {
           setProfileImage(savedProfileImage);
           setHasLocalAccount(Boolean(savedCredentials));
           setLoginRateLimit(savedLoginRateLimit);
+          setBackupReminder(savedBackupReminder);
         },
       )
       .catch(() =>
@@ -296,6 +319,7 @@ function App() {
       setActiveTab("dashboard");
       setHasLocalAccount(false);
       setLoginRateLimit(EMPTY_LOGIN_RATE_LIMIT);
+      setBackupReminder(EMPTY_BACKUP_REMINDER);
       showToast("Local account and browser data deleted.", "success");
       return true;
     } catch {
@@ -334,6 +358,12 @@ function App() {
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const nextBackupReminder: BackupReminderState = {
+        lastBackupAt: new Date().toISOString(),
+        snoozedUntil: null,
+      };
+      await setStoredValue(STORAGE_KEYS.backupReminder, nextBackupReminder);
+      setBackupReminder(nextBackupReminder);
       showToast("Backup file exported.", "success");
     } catch {
       showToast("The backup file could not be exported.", "error");
@@ -355,16 +385,22 @@ function App() {
       const importedImage = backup.profileImage?.dataUrl
         ? dataUrlToBlob(backup.profileImage.dataUrl)
         : null;
+      const nextBackupReminder: BackupReminderState = {
+        lastBackupAt: new Date().toISOString(),
+        snoozedUntil: null,
+      };
       await setStoredValues([
         [STORAGE_KEYS.user, importedUser],
         [STORAGE_KEYS.profile, backup.profile],
         [STORAGE_KEYS.records, backup.records],
         [STORAGE_KEYS.profileImage, importedImage],
+        [STORAGE_KEYS.backupReminder, nextBackupReminder],
       ]);
       setUser(importedUser);
       setProfile(backup.profile);
       setRecords(backup.records);
       setProfileImage(importedImage);
+      setBackupReminder(nextBackupReminder);
       showToast("Backup imported successfully.", "success");
       return true;
     } catch {
@@ -417,6 +453,20 @@ function App() {
     await setStoredValue(STORAGE_KEYS.profileImage, null);
     setProfileImage(null);
     showToast("Profile photo removed.", "success");
+  }
+
+  async function snoozeBackupReminder() {
+    try {
+      const nextBackupReminder = {
+        ...backupReminder,
+        snoozedUntil: createBackupSnooze(),
+      };
+      await setStoredValue(STORAGE_KEYS.backupReminder, nextBackupReminder);
+      setBackupReminder(nextBackupReminder);
+      showToast("Backup reminder snoozed for 12 hours.", "info");
+    } catch {
+      showToast("The backup reminder could not be snoozed.", "error");
+    }
   }
 
   async function downloadPdf(separateByMonth = separateReportMonths) {
@@ -537,6 +587,9 @@ function App() {
               profile={profile}
               onOpenRecords={() => setActiveTab("records")}
               onEditRecord={editFromDashboard}
+              showBackupReminder={backupStatus.isDue}
+              onExportBackup={exportBackup}
+              onSnoozeBackup={snoozeBackupReminder}
             />
           )}
           {activeTab === "records" && (
@@ -579,6 +632,11 @@ function App() {
             file={pendingProfileImage}
             onCancel={() => setPendingProfileImage(null)}
             onApply={saveCroppedProfileImage}
+          />
+          <BackupReminderModal
+            open={activeTab === "dashboard" && backupStatus.isSignificantlyOverdue}
+            onExport={exportBackup}
+            onSnooze={snoozeBackupReminder}
           />
         </div>
       )}

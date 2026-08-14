@@ -19,6 +19,11 @@ export type LoginRateLimit = {
   lockedUntil: number | null;
 };
 
+export type BackupReminderState = {
+  lastBackupAt: string | null;
+  snoozedUntil: string | null;
+};
+
 export type StudentProfile = {
   fullName: string;
   email: string;
