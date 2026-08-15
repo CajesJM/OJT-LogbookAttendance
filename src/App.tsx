@@ -19,7 +19,7 @@ import { ToastViewport } from "./components/ui/ToastViewport";
 import { useConfirm } from "./hooks/useConfirm";
 import { useObjectUrl } from "./hooks/useObjectUrl";
 import { useToast } from "./hooks/useToast";
-import { emptyProfile } from "./lib/defaults";
+import { emptyProfile, normalizeProfile } from "./lib/defaults";
 import { parseBackup } from "./lib/backup";
 import { createCredentials, verifyCredentials } from "./lib/auth";
 import {
@@ -117,7 +117,7 @@ function App() {
           savedBackupReminder,
         ]) => {
           setUser(savedUser);
-          setProfile(savedProfile);
+          setProfile(normalizeProfile(savedProfile));
           setRecords(savedRecords);
           setProfileImage(savedProfileImage);
           setHasLocalAccount(Boolean(savedCredentials));
@@ -197,7 +197,7 @@ function App() {
           name: username.trim(),
         };
         const nextProfile = {
-          ...savedProfile,
+          ...normalizeProfile(savedProfile),
           fullName: isNewAccount
             ? account.name
             : savedProfile.fullName || account.name,

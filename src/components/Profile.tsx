@@ -2,7 +2,18 @@ import { ChangeEvent, FormEvent, useState } from "react";
 import { Download, Info, LogOut, Pencil, Printer, Save, Trash2, Upload, X } from "lucide-react";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { AccountHelpModal } from "./ui/AccountHelpModal";
+import { normalizeDutyDays } from "../lib/completionEstimate";
 import type { StudentProfile } from "../types";
+
+const DUTY_DAY_OPTIONS = [
+  { value: 1, label: "Mon" },
+  { value: 2, label: "Tue" },
+  { value: 3, label: "Wed" },
+  { value: 4, label: "Thu" },
+  { value: 5, label: "Fri" },
+  { value: 6, label: "Sat" },
+  { value: 0, label: "Sun" },
+];
 
 type Props = {
   profile: StudentProfile;
@@ -58,6 +69,14 @@ export function Profile({
     if (editSnapshot) onChange(editSnapshot);
     setEditSnapshot(null);
     setIsEditing(false);
+  }
+
+  function toggleDutyDay(day: number) {
+    const currentDays = normalizeDutyDays(profile.dutyDays);
+    const nextDays = currentDays.includes(day)
+      ? currentDays.filter((currentDay) => currentDay !== day)
+      : [...currentDays, day];
+    if (nextDays.length > 0) update("dutyDays", nextDays.sort((a, b) => a - b));
   }
 
   async function chooseBackup(event: ChangeEvent<HTMLInputElement>) {
@@ -196,6 +215,24 @@ export function Profile({
               required
             />
           </label>
+          <fieldset className="duty-schedule full" disabled={!isEditing}>
+            <legend>Regular duty days</legend>
+            <div className="duty-day-options">
+              {DUTY_DAY_OPTIONS.map((day) => {
+                const selected = normalizeDutyDays(profile.dutyDays).includes(day.value);
+                return (
+                  <label key={day.value} className={selected ? "selected" : ""}>
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleDutyDay(day.value)}
+                    />
+                    <span>{day.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
           {isEditing && (
             <button className="button primary full" type="submit">
               <Save size={18} /> Review profile changes

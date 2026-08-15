@@ -1,4 +1,5 @@
 import type { BackupData, DailyRecord, StudentProfile, UserAccount } from "../types";
+import { normalizeProfile } from "./defaults";
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -30,7 +31,11 @@ function isProfile(value: unknown): value is StudentProfile {
     && typeof value.ojtStartDate === "string"
     && typeof value.requiredHours === "number"
     && Number.isFinite(value.requiredHours)
-    && value.requiredHours > 0;
+    && value.requiredHours > 0
+    && (value.dutyDays === undefined || (
+      Array.isArray(value.dutyDays)
+      && value.dutyDays.every((day) => typeof day === "number" && Number.isInteger(day) && day >= 0 && day <= 6)
+    ));
 }
 
 function isRecord(value: unknown): value is DailyRecord {
@@ -75,5 +80,8 @@ export function parseBackup(text: string): BackupData {
   ) {
     throw new Error("Invalid backup");
   }
-  return value as BackupData;
+  return {
+    ...(value as BackupData),
+    profile: normalizeProfile(value.profile as StudentProfile),
+  };
 }

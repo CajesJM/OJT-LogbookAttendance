@@ -1,4 +1,5 @@
 import type { DailyRecord, StudentProfile } from "../types";
+import { DEFAULT_DUTY_DAYS, normalizeDutyDays } from "./completionEstimate";
 
 export const emptyProfile: StudentProfile = {
   fullName: "",
@@ -10,7 +11,16 @@ export const emptyProfile: StudentProfile = {
   supervisorName: "",
   ojtStartDate: "",
   requiredHours: 0,
+  dutyDays: [...DEFAULT_DUTY_DAYS],
 };
+
+export function normalizeProfile(profile: StudentProfile): StudentProfile {
+  return {
+    ...emptyProfile,
+    ...profile,
+    dutyDays: normalizeDutyDays(profile.dutyDays),
+  };
+}
 
 export function createEmptyRecord(): DailyRecord {
   const now = new Date();

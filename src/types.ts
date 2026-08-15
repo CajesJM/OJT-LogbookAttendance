@@ -34,6 +34,7 @@ export type StudentProfile = {
   supervisorName: string;
   ojtStartDate: string;
   requiredHours: number;
+  dutyDays: number[];
 };
 
 export type DailyRecord = {

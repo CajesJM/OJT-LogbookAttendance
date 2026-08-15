@@ -9,6 +9,7 @@ import {
   Target,
 } from "lucide-react";
 import { formatDate, formatHours } from "../lib/format";
+import { calculateCompletionEstimate } from "../lib/completionEstimate";
 import type { DailyRecord, StudentProfile } from "../types";
 import { MiniCalendar } from "./MiniCalendar";
 
@@ -55,6 +56,43 @@ export function Dashboard({
     .slice(0, 3);
   const firstName = (profile.fullName || "Trainee").trim().split(" ")[0];
   const greeting = `${greetingForHour(now.getHours())}, ${firstName}.`;
+  const completionEstimate = calculateCompletionEstimate(
+    records,
+    requiredHours,
+    profile.dutyDays,
+    now,
+  );
+
+  const estimateContent = (() => {
+    if (completionEstimate.status === "missing-required-hours") {
+      return {
+        title: "Add your required hours",
+        detail: "Complete your Profile to enable a completion estimate.",
+      };
+    }
+    if (completionEstimate.status === "needs-records") {
+      const count = completionEstimate.recordsNeeded;
+      return {
+        title: "Building your estimate",
+        detail: `Add ${count} more completed record${count === 1 ? "" : "s"} to calculate a reliable pace.`,
+      };
+    }
+    if (completionEstimate.status === "completed") {
+      return {
+        title: "Training completed",
+        detail: "Your rendered hours have reached the required total.",
+      };
+    }
+    const roundedWeeks = Math.max(1, Math.ceil(completionEstimate.weeksRemaining));
+    return {
+      title: completionEstimate.completionDate.toLocaleDateString("en-PH", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
+      detail: `${formatHours(completionEstimate.averageWeeklyHours)} average per week · Approximately ${roundedWeeks} week${roundedWeeks === 1 ? "" : "s"} remaining`,
+    };
+  })();
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60000);
@@ -205,6 +243,13 @@ export function Dashboard({
           <span>50%</span>
           <span>75%</span>
           <span>{formatHours(requiredHours)}</span>
+        </div>
+        <div className={`completion-estimate status-${completionEstimate.status}`} aria-live="polite">
+          <div className="completion-estimate-copy">
+            <span>Estimated completion</span>
+            <strong>{estimateContent.title}</strong>
+            <p>{estimateContent.detail}</p>
+          </div>
         </div>
       </section>
 
