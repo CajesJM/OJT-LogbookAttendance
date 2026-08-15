@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { DailyRecord } from "../types";
 
 type Props = {
@@ -14,6 +14,15 @@ function localDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function normalizeRecordDate(value: string) {
+  const datePart = value.trim().match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (!datePart) return null;
+  const parsed = new Date(`${datePart}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) || localDateKey(parsed) !== datePart
+    ? null
+    : datePart;
+}
+
 function activityLevel(hours: number) {
   if (hours <= 0) return 0;
   if (hours <= 2) return 1;
@@ -23,15 +32,18 @@ function activityLevel(hours: number) {
 }
 
 export function MiniCalendar({ records, ojtStartDate }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => new Date(), []);
   const todayKey = localDateKey(today);
   const { weeks, monthLabels, hoursByDate, activeDays, totalHours } =
     useMemo(() => {
       const totals = new Map<string, number>();
       records.forEach((record) => {
+        const dateKey = normalizeRecordDate(record.date);
+        if (!dateKey) return;
         totals.set(
-          record.date,
-          (totals.get(record.date) || 0) + record.totalHours,
+          dateKey,
+          (totals.get(dateKey) || 0) + Number(record.totalHours || 0),
         );
       });
 
@@ -78,6 +90,20 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
       };
     }, [records, today, todayKey]);
 
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const frame = window.requestAnimationFrame(() => {
+      container.scrollTo({
+        left: container.scrollWidth - container.clientWidth,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [records]);
+
   return (
     <article
       className="calendar-widget activity-widget"
@@ -96,6 +122,7 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
       </header>
 
       <div
+        ref={scrollRef}
         className="activity-scroll"
         tabIndex={0}
         aria-label="Scroll through one year of OJT activity"
