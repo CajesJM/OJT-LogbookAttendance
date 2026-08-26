@@ -1,4 +1,4 @@
-import { formatDate, formatHours } from "./format";
+import { formatDate, formatHours, formatTime12Hour } from "./format";
 import type { DailyRecord, ReportTemplate, StudentProfile, UserAccount } from "../types";
 
 type DocxReportData = {
@@ -217,7 +217,7 @@ export async function downloadOjtReportDocx({ user, profile, records, separateBy
     const rows = group.entries.map(({ record, remaining }) => {
       const details = [
         paragraph(textRun(`${formatDate(record.date)} - ${record.taskTitle}`, true)),
-        paragraph(textRun(`${record.timeIn} to ${record.timeOut} (${formatHours(record.totalHours)})`, false, 16)),
+        paragraph(textRun(`${formatTime12Hour(record.timeIn)} to ${formatTime12Hour(record.timeOut)} (${formatHours(record.totalHours)})`, false, 16)),
         ...(record.activities ? [paragraph(textRun("Activities: ", true, 16) + textRun(record.activities, false, 16))] : []),
         ...(record.skillsLearned ? [paragraph(textRun("Skills learned: ", true, 16) + textRun(record.skillsLearned, false, 16))] : []),
         ...(record.challenges ? [paragraph(textRun("Challenges: ", true, 16) + textRun(record.challenges, false, 16))] : []),

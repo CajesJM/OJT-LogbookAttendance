@@ -1,4 +1,4 @@
-import { formatDate, formatHours } from "./format";
+import { formatDate, formatHours, formatTime12Hour } from "./format";
 import type { DailyRecord, ReportTemplate, StudentProfile, UserAccount } from "../types";
 
 type PdfReportData = {
@@ -205,7 +205,7 @@ export async function downloadOjtReportPdf({ user, profile, records, separateByM
       y += 4.5;
       document.setFont("helvetica", "normal");
       document.setFontSize(7.8);
-      document.text(`${record.timeIn} to ${record.timeOut} (${formatHours(record.totalHours)})`, margin, y);
+      document.text(`${formatTime12Hour(record.timeIn)} to ${formatTime12Hour(record.timeOut)} (${formatHours(record.totalHours)})`, margin, y);
       y += 4;
       if (detailLines.length) {
         document.text(detailLines, margin, y);

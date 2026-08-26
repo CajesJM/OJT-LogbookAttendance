@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="title description">
+  <title id="title">OJT Logbook</title>
+  <desc id="description">A training progress path with a completion check.</desc>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="1" y="1" width="46" height="46" rx="12" fill="#176B55" stroke="#176B55" stroke-width="2"/>
+    <path d="M13 31c4-10 8-15 14-15 5 0 8 4 8 8" stroke="#BFE2D5" stroke-width="3"/>
+    <circle cx="14" cy="32" r="3" fill="#F2C46D" stroke="#F2C46D"/>
+    <circle cx="27" cy="16" r="3" fill="#FFFFFF" stroke="#FFFFFF"/>
+    <path d="m26 29 5 5 9-12" stroke="#FFFFFF" stroke-width="3.4"/>
+  </g>
+</svg>

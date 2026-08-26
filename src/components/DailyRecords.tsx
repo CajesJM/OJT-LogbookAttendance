@@ -1,7 +1,22 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Edit3, FilePlus2, Search, Trash2, X } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
+  FilePlus2,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { createEmptyRecord } from "../lib/defaults";
-import { calculateHours, formatDate, formatHours } from "../lib/format";
+import {
+  calculateHours,
+  formatDate,
+  formatHours,
+  formatTime12Hour,
+} from "../lib/format";
 import type { DailyRecord } from "../types";
 import { SignaturePad } from "./SignaturePad";
 
@@ -38,6 +53,9 @@ export function DailyRecords({
   const [editingId, setEditingId] = useState<string | null>(
     initialRecord?.id || null,
   );
+  const [isAddingRecord, setIsAddingRecord] = useState(false);
+  const [isClosingModal, setIsClosingModal] = useState(false);
+  const isModalOpen = Boolean(editingId || isAddingRecord);
   const [search, setSearch] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [activeMonth, setActiveMonth] = useState("all");
@@ -49,23 +67,28 @@ export function DailyRecords({
   useEffect(() => {
     if (!initialRecord) return;
     scrollPositionRef.current = window.scrollY;
+    setIsClosingModal(false);
     setDraft(normalizeRecord(initialRecord));
     setEditingId(initialRecord.id);
+    setIsAddingRecord(false);
     onInitialRecordHandled();
   }, [initialRecord, onInitialRecordHandled]);
 
   useEffect(() => {
-    if (!editingId) return;
+    if (!isModalOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") resetForm();
+      if (event.key === "Escape") closeModal();
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [editingId]);
+  }, [isModalOpen, isClosingModal]);
 
   const monthOptions = useMemo(() => {
-    const months = [...new Set(records.map((record) => record.date.slice(0, 7)).filter(Boolean))]
-      .sort((a, b) => b.localeCompare(a));
+    const months = [
+      ...new Set(
+        records.map((record) => record.date.slice(0, 7)).filter(Boolean),
+      ),
+    ].sort((a, b) => b.localeCompare(a));
     return months.map((value) => ({
       value,
       label: new Date(`${value}-01T00:00:00`).toLocaleDateString("en-US", {
@@ -80,7 +103,8 @@ export function DailyRecords({
     return [...records]
       .sort((a, b) => b.date.localeCompare(a.date))
       .filter((record) => {
-        if (activeMonth !== "all" && !record.date.startsWith(activeMonth)) return false;
+        if (activeMonth !== "all" && !record.date.startsWith(activeMonth))
+          return false;
         if (!query) return true;
         return [
           record.date,
@@ -95,7 +119,10 @@ export function DailyRecords({
           .includes(query);
       });
   }, [records, search, activeMonth]);
-  const pageCount = Math.max(1, Math.ceil(filteredRecords.length / RECORDS_PER_PAGE));
+  const pageCount = Math.max(
+    1,
+    Math.ceil(filteredRecords.length / RECORDS_PER_PAGE),
+  );
   const displayedPage = Math.min(currentPage, pageCount);
   const paginatedRecords = filteredRecords.slice(
     (displayedPage - 1) * RECORDS_PER_PAGE,
@@ -107,15 +134,22 @@ export function DailyRecords({
   }, [search, activeMonth]);
 
   useEffect(() => {
-    if (selectedMonth !== "all" && !monthOptions.some((month) => month.value === selectedMonth)) {
+    if (
+      selectedMonth !== "all" &&
+      !monthOptions.some((month) => month.value === selectedMonth)
+    ) {
       setSelectedMonth("all");
       setActiveMonth("all");
     }
   }, [monthOptions, selectedMonth]);
 
-  useEffect(() => () => {
-    if (monthChangeTimerRef.current !== null) window.clearTimeout(monthChangeTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (monthChangeTimerRef.current !== null)
+        window.clearTimeout(monthChangeTimerRef.current);
+    },
+    [],
+  );
 
   function changeMonth(nextMonth: string) {
     if (nextMonth === selectedMonth) return;
@@ -126,7 +160,8 @@ export function DailyRecords({
       return;
     }
     setRecordsExiting(true);
-    if (monthChangeTimerRef.current !== null) window.clearTimeout(monthChangeTimerRef.current);
+    if (monthChangeTimerRef.current !== null)
+      window.clearTimeout(monthChangeTimerRef.current);
     monthChangeTimerRef.current = window.setTimeout(() => {
       setActiveMonth(nextMonth);
       setCurrentPage(1);
@@ -148,10 +183,24 @@ export function DailyRecords({
     });
   }
 
-  function resetForm() {
+  function closeModal() {
+    if (isClosingModal) return;
+    if (!isModalOpen) {
+      resetFormState();
+      return;
+    }
+    setIsClosingModal(true);
+    setTimeout(() => {
+      resetFormState();
+      setIsClosingModal(false);
+    }, 220);
+  }
+
+  function resetFormState() {
     const scrollPosition = scrollPositionRef.current;
     setDraft(createEmptyRecord());
     setEditingId(null);
+    setIsAddingRecord(false);
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         window.scrollTo({ top: scrollPosition, behavior: "auto" });
@@ -182,247 +231,279 @@ export function DailyRecords({
       },
       editingId,
     );
-    if (saved) resetForm();
+    if (saved) closeModal();
   }
 
   function beginEdit(record: DailyRecord) {
     scrollPositionRef.current = window.scrollY;
+    setIsClosingModal(false);
     setDraft(normalizeRecord(record));
     setEditingId(record.id);
+    setIsAddingRecord(false);
   }
 
   const formSurface = (
-      <section
-        className={`surface record-form-surface${editingId ? " edit-record-modal" : ""}`}
-        role={editingId ? "dialog" : undefined}
-        aria-modal={editingId ? "true" : undefined}
-        aria-labelledby={editingId ? "edit-record-title" : undefined}
-      >
-        <div className="section-head">
-          <div>
-            <p className="section-kicker">Attendance + logbook</p>
-            <h2 id={editingId ? "edit-record-title" : undefined}>
-              {editingId ? "Edit daily record" : "New daily record"}
-            </h2>
-          </div>
-          {editingId && (
-            <button className="icon-button labeled" onClick={resetForm}>
-              <X size={18} /> Cancel
-            </button>
-          )}
+    <section
+      className={`surface record-form-surface${isModalOpen ? " edit-record-modal" : ""}${isClosingModal ? " is-closing" : ""}`}
+      role={isModalOpen ? "dialog" : undefined}
+      aria-modal={isModalOpen ? "true" : undefined}
+      aria-labelledby={isModalOpen ? "edit-record-title" : undefined}
+    >
+      <div className="section-head">
+        <div>
+          <p className="section-kicker">Attendance + logbook</p>
+          <h2 id={isModalOpen ? "edit-record-title" : undefined}>
+            {editingId ? "Edit daily record" : "New daily record"}
+          </h2>
         </div>
-        <form className="form-grid" onSubmit={submit}>
-          <label>
-            <span>Date</span>
-            <input
-              type="date"
-              value={draft.date}
-              onChange={(e) => update("date", e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            <span>Time-in</span>
-            <input
-              type="time"
-              value={draft.timeIn}
-              onChange={(e) => update("timeIn", e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            <span>Time-out</span>
-            <input
-              type="time"
-              value={draft.timeOut}
-              onChange={(e) => update("timeOut", e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            <span>Total hours</span>
-            <input
-              className="calculated-field"
-              value={formatHours(draft.totalHours)}
-              readOnly
-            />
-          </label>
-          <label className="full">
-            <span>Task title or main activity</span>
-            <input
-              value={draft.taskTitle}
-              onChange={(e) => update("taskTitle", e.target.value)}
-              placeholder="E.g., Assisted in software testing"
-              required
-            />
-          </label>
-          <div className="record-notes-grid full">
-            <label className="reflection-field">
-              <span className="field-label">
-                Reflection
-                <small>Optional</small>
-              </span>
-              <textarea
-                maxLength={REFLECTION_LIMIT}
-                value={draft.reflection || ""}
-                onChange={(event) =>
-                  update(
-                    "reflection",
-                    event.target.value.slice(0, REFLECTION_LIMIT),
-                  )
-                }
-                placeholder="Briefly reflect on what you learned today"
-              />
-              <small className="character-count">
-                {(draft.reflection || "").length}/{REFLECTION_LIMIT}
-              </small>
-            </label>
-            <SignaturePad
-              value={draft.signature || ""}
-              onChange={(value) => update("signature", value)}
-            />
-          </div>
-          <button className="button primary full" type="submit">
-            <FilePlus2 size={18} /> {editingId ? "Update" : "Save"}
+        {isModalOpen && (
+          <button
+            className="icon-button labeled"
+            type="button"
+            onClick={closeModal}
+          >
+            <X size={18} />
           </button>
-        </form>
-      </section>
+        )}
+      </div>
+      <form className="form-grid" onSubmit={submit}>
+        <label>
+          <span>Date</span>
+          <input
+            type="date"
+            value={draft.date}
+            onChange={(e) => update("date", e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          <span>Time-in</span>
+          <input
+            type="time"
+            value={draft.timeIn}
+            onChange={(e) => update("timeIn", e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          <span>Time-out</span>
+          <input
+            type="time"
+            value={draft.timeOut}
+            onChange={(e) => update("timeOut", e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          <span>Total hours</span>
+          <input
+            className="calculated-field"
+            value={formatHours(draft.totalHours)}
+            readOnly
+          />
+        </label>
+        <label className="full">
+          <span>Task title or main activity</span>
+          <input
+            value={draft.taskTitle}
+            onChange={(e) => update("taskTitle", e.target.value)}
+            placeholder="E.g., Assisted in software testing"
+            required
+          />
+        </label>
+        <div className="record-notes-grid full">
+          <label className="reflection-field">
+            <span className="field-label">
+              Reflection
+              <small>Optional</small>
+            </span>
+            <textarea
+              maxLength={REFLECTION_LIMIT}
+              value={draft.reflection || ""}
+              onChange={(event) =>
+                update(
+                  "reflection",
+                  event.target.value.slice(0, REFLECTION_LIMIT),
+                )
+              }
+              placeholder="Briefly reflect on what you learned today"
+            />
+            <small className="character-count">
+              {(draft.reflection || "").length}/{REFLECTION_LIMIT}
+            </small>
+          </label>
+          <SignaturePad
+            value={draft.signature || ""}
+            onChange={(value) => update("signature", value)}
+          />
+        </div>
+        <button className="button primary full" type="submit">
+          <FilePlus2 size={18} /> {editingId ? "Update" : "Save"}
+        </button>
+      </form>
+    </section>
   );
 
   return (
     <>
-      {editingId && (
+      {isModalOpen && (
         <div
-          className="modal-backdrop edit-record-backdrop"
+          className={`modal-backdrop edit-record-backdrop${isClosingModal ? " is-closing" : ""}`}
           onMouseDown={(event) => {
-            if (event.currentTarget === event.target) resetForm();
+            if (event.currentTarget === event.target) closeModal();
           }}
         >
           {formSurface}
         </div>
       )}
       <main className="page-content records-layout">
-      {!editingId && formSurface}
+        <div className="inline-record-form">{!isModalOpen && formSurface}</div>
 
-      <section className="surface records-surface">
-        <div className="section-head records-head">
-          <div>
-            <p className="section-kicker">Your history</p>
-            <h2>
-              Saved records{" "}
-              <span className="count-badge">{records.length}</span>
-            </h2>
-          </div>
-          <div className="records-filter-bar">
-            {monthOptions.length > 1 && (
-              <div className="month-filter">
-                <CalendarDays size={17} aria-hidden="true" />
-                <select
-                  value={selectedMonth}
-                  onChange={(event) => {
-                    changeMonth(event.target.value);
-                  }}
-                  aria-label="Filter records by month"
-                >
-                  <option value="all">All months</option>
-                  {monthOptions.map((month) => (
-                    <option value={month.value} key={month.value}>{month.label}</option>
-                  ))}
-                </select>
+        <section className="surface records-surface">
+          <div className="section-head records-head">
+            <div className="records-title-row">
+              <div>
+                <p className="section-kicker">Your history</p>
+                <h2>
+                  Saved records{" "}
+                  <span className="count-badge">{records.length}</span>
+                </h2>
               </div>
-            )}
-            <div className="search-box">
-              <Search size={18} />
-              <input
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
+              <button
+                className="mobile-add-record-button button primary icon-only"
+                type="button"
+                onClick={() => {
+                  setIsClosingModal(false);
+                  setDraft(createEmptyRecord());
+                  setEditingId(null);
+                  setIsAddingRecord(true);
                 }}
-                placeholder="Search records"
-                aria-label="Search records"
-              />
+                aria-label="Add new record"
+                title="Add new record"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
+            <div className="records-filter-bar">
+              {monthOptions.length > 1 && (
+                <div className="month-filter">
+                  <CalendarDays size={17} aria-hidden="true" />
+                  <select
+                    value={selectedMonth}
+                    onChange={(event) => {
+                      changeMonth(event.target.value);
+                    }}
+                    aria-label="Filter records by month"
+                  >
+                    <option value="all">All months</option>
+                    {monthOptions.map((month) => (
+                      <option value={month.value} key={month.value}>
+                        {month.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="search-box">
+                <Search size={18} />
+                <input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search records"
+                  aria-label="Search records"
+                />
+              </div>
             </div>
           </div>
-        </div>
-        <div
-          className={`record-list records-animated${recordsExiting ? " records-exiting" : ""}`}
-          key={`${activeMonth}-${displayedPage}`}
-        >
-          {filteredRecords.length === 0 ? (
-            <div className="empty-state">
-              <Search size={28} />
-              <h3>
-                {records.length ? "No matching records" : "No records yet"}
-              </h3>
-              <p>
-                {records.length
-                  ? "Try another search term or month."
-                  : "Complete the form to add your first entry."}
-              </p>
-            </div>
-          ) : (
-            paginatedRecords.map((record) => (
-              <article key={record.id} className="record-card">
-                <div className="record-card-head">
-                  <div>
-                    <p className="record-date">{formatDate(record.date)}</p>
-                    <h3>{record.taskTitle}</h3>
-                    <span>
-                      {record.timeIn}–{record.timeOut} ·{" "}
-                      {formatHours(record.totalHours)}
-                    </span>
+          <div
+            className={`record-list records-animated${recordsExiting ? " records-exiting" : ""}`}
+            key={`${activeMonth}-${displayedPage}`}
+          >
+            {filteredRecords.length === 0 ? (
+              <div className="empty-state">
+                <Search size={28} />
+                <h3>
+                  {records.length ? "No matching records" : "No records yet"}
+                </h3>
+                <p>
+                  {records.length
+                    ? "Try another search term or month."
+                    : "Complete the form to add your first entry."}
+                </p>
+              </div>
+            ) : (
+              paginatedRecords.map((record) => (
+                <article key={record.id} className="record-card">
+                  <div className="record-card-head">
+                    <div>
+                      <p className="record-date">{formatDate(record.date)}</p>
+                      <h3>{record.taskTitle}</h3>
+                      <span>
+                        {formatTime12Hour(record.timeIn)}–
+                        {formatTime12Hour(record.timeOut)} ·{" "}
+                        {formatHours(record.totalHours)}
+                      </span>
+                    </div>
+                    <div className="record-actions print-hide">
+                      <button
+                        className="icon-button"
+                        onClick={() => beginEdit(record)}
+                        aria-label={`Edit ${record.taskTitle}`}
+                        title="Edit record"
+                      >
+                        <Edit3 size={15} />
+                      </button>
+                      <button
+                        className="icon-button danger-icon"
+                        onClick={() => onDelete(record)}
+                        aria-label={`Delete ${record.taskTitle}`}
+                        title="Delete record"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="record-actions print-hide">
-                    <button
-                      className="icon-button"
-                      onClick={() => beginEdit(record)}
-                      aria-label={`Edit ${record.taskTitle}`}
-                      title="Edit record"
-                    >
-                      <Edit3 size={15} />
-                    </button>
-                    <button
-                      className="icon-button danger-icon"
-                      onClick={() => onDelete(record)}
-                      aria-label={`Delete ${record.taskTitle}`}
-                      title="Delete record"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-                <RecordDetails record={record} />
-              </article>
-            ))
+                  <RecordDetails record={record} />
+                </article>
+              ))
+            )}
+          </div>
+          {pageCount > 1 && (
+            <nav
+              className="records-pagination"
+              aria-label="Saved records pages"
+            >
+              <button
+                className="icon-button"
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={displayedPage === 1}
+                aria-label="Previous page"
+                title="Previous page"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span>
+                Page <b>{displayedPage}</b> of {pageCount}
+              </span>
+              <button
+                className="icon-button"
+                type="button"
+                onClick={() =>
+                  setCurrentPage((page) => Math.min(pageCount, page + 1))
+                }
+                disabled={displayedPage === pageCount}
+                aria-label="Next page"
+                title="Next page"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </nav>
           )}
-        </div>
-        {pageCount > 1 && (
-          <nav className="records-pagination" aria-label="Saved records pages">
-            <button
-              className="icon-button"
-              type="button"
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              disabled={displayedPage === 1}
-              aria-label="Previous page"
-              title="Previous page"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span>Page <b>{displayedPage}</b> of {pageCount}</span>
-            <button
-              className="icon-button"
-              type="button"
-              onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
-              disabled={displayedPage === pageCount}
-              aria-label="Next page"
-              title="Next page"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </nav>
-        )}
-      </section>
+        </section>
       </main>
     </>
   );

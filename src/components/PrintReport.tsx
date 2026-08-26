@@ -1,4 +1,4 @@
-import { formatDate, formatHours } from "../lib/format";
+import { formatDate, formatHours, formatTime12Hour } from "../lib/format";
 import type { DailyRecord, ReportTemplate, StudentProfile, UserAccount } from "../types";
 
 export function PrintReport({
@@ -153,7 +153,7 @@ export function PrintReport({
               {formatDate(record.date)} — {record.taskTitle}
             </h3>
             <p>
-              <b>Time:</b> {record.timeIn} to {record.timeOut} (
+              <b>Time:</b> {formatTime12Hour(record.timeIn)} to {formatTime12Hour(record.timeOut)} (
               {formatHours(record.totalHours)})
             </p>
             {record.activities && (

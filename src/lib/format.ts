@@ -15,6 +15,19 @@ export function formatHours(hours: number): string {
   return `${wholeHours}:${String(minutes).padStart(2, "0")} hrs`;
 }
 
+export function formatTime12Hour(time: string): string {
+  if (!time || typeof time !== "string") return "";
+  const parts = time.split(":");
+  if (parts.length < 2) return time;
+  const hour = parseInt(parts[0], 10);
+  const minute = parseInt(parts[1], 10);
+  if (isNaN(hour) || isNaN(minute)) return time;
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  const formattedMinutes = String(minute).padStart(2, "0");
+  return `${hour12}:${formattedMinutes} ${period}`;
+}
+
 export function formatDate(value: string): string {
   if (!value) return "Not set";
   return new Intl.DateTimeFormat("en-PH", {

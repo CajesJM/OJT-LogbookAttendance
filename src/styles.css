@@ -1158,8 +1158,169 @@ label {
   font-weight: 500;
   line-height: 1.4;
 }
+.signature-mode-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-soft);
+}
+.signature-mode-toggle label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+.signature-mode-toggle label:hover {
+  color: var(--primary);
+}
+.signature-mode-toggle label.selected {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 1px 4px rgba(24, 35, 31, 0.08);
+}
+.signature-mode-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.signature-upload-area {
+  display: grid;
+  gap: 10px;
+}
+.signature-upload-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 132px;
+  padding: 16px;
+  border: 2px dashed #cfdad4;
+  border-radius: 7px;
+  background: #fbfcfb;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.signature-upload-button:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.signature-upload-button svg {
+  color: var(--primary);
+}
+.signature-upload-button span {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.signature-upload-button small {
+  font-size: 0.64rem;
+  color: var(--muted);
+}
+.signature-upload-error {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #efcaca;
+  border-radius: 6px;
+  background: #fff4f4;
+  color: var(--danger);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+.signature-upload-preview {
+  display: flex;
+  justify-content: center;
+}
+.signature-upload-preview img {
+  max-width: 100%;
+  height: 80px;
+  object-fit: contain;
+  object-position: center;
+  border-bottom: 1px solid var(--line);
+}
+.signature-review-backdrop {
+  z-index: 90;
+}
+.signature-review-modal {
+  width: min(480px, 100%);
+}
+.signature-review-preview {
+  height: 142px;
+  display: grid;
+  place-items: center;
+  margin-top: 16px;
+  padding: 13px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+}
+.signature-review-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.signature-review-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 10px !important;
+  padding: 9px 10px;
+  border: 1px solid #ead7b2;
+  border-radius: 6px;
+  background: #fffaf0;
+  color: var(--amber) !important;
+  font-size: 0.7rem !important;
+}
+.signature-review-warning svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.signature-review-confirm {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  margin-top: 13px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  cursor: pointer;
+  font-size: 0.74rem;
+}
+.signature-review-confirm input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--primary);
+}
 .records-head {
   align-items: flex-end;
+}
+.records-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.mobile-add-record-button {
+  display: none;
 }
 .count-badge {
   display: inline-grid;
@@ -1312,6 +1473,11 @@ label {
   align-items: flex-start;
   overflow-y: auto;
   padding: 28px 16px;
+  animation: modal-backdrop-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.edit-record-backdrop.is-closing {
+  animation: modal-backdrop-out 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  pointer-events: none;
 }
 .edit-record-modal {
   position: relative;
@@ -1321,6 +1487,49 @@ label {
   margin: auto;
   overflow-y: auto;
   box-shadow: 0 24px 65px rgba(16, 31, 25, 0.24);
+  transform-origin: top right;
+  animation: modal-zoom-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.edit-record-modal.is-closing {
+  transform-origin: top right;
+  animation: modal-zoom-out 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes modal-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.18) translate(60px, -40px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+}
+@keyframes modal-zoom-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.18) translate(60px, -40px);
+  }
 }
 .edit-record-modal .section-head {
   align-items: center;
@@ -2029,6 +2238,27 @@ label {
   }
   .record-form-surface {
     position: static;
+  }
+  .inline-record-form {
+    display: none;
+  }
+  .mobile-add-record-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    min-height: 38px;
+    padding: 0;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(23, 107, 85, 0.25);
+  }
+  .records-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 4px;
   }
 }
 
