@@ -14,6 +14,7 @@ import { createEmptyRecord } from "../lib/defaults";
 import {
   calculateHours,
   formatDate,
+  formatDayName,
   formatHours,
   formatTime12Hour,
 } from "../lib/format";
@@ -31,6 +32,12 @@ type Props = {
 
 const REFLECTION_LIMIT = 250;
 const RECORDS_PER_PAGE = 5;
+
+type DayGroup = {
+  date: string;
+  totalHours: number;
+  records: DailyRecord[];
+};
 
 function normalizeRecord(record: DailyRecord): DailyRecord {
   return {
@@ -119,12 +126,34 @@ export function DailyRecords({
           .includes(query);
       });
   }, [records, search, activeMonth]);
+  const groupedDays = useMemo(() => {
+    const groups: DayGroup[] = [];
+    const map = new Map<string, DailyRecord[]>();
+
+    for (const record of filteredRecords) {
+      const list = map.get(record.date) || [];
+      list.push(record);
+      map.set(record.date, list);
+    }
+
+    for (const [date, list] of map.entries()) {
+      list.sort((a, b) => (a.timeIn || "").localeCompare(b.timeIn || ""));
+      const totalHours = list.reduce(
+        (sum, r) => sum + (r.totalHours || 0),
+        0,
+      );
+      groups.push({ date, totalHours, records: list });
+    }
+
+    return groups;
+  }, [filteredRecords]);
+
   const pageCount = Math.max(
     1,
-    Math.ceil(filteredRecords.length / RECORDS_PER_PAGE),
+    Math.ceil(groupedDays.length / RECORDS_PER_PAGE),
   );
   const displayedPage = Math.min(currentPage, pageCount);
-  const paginatedRecords = filteredRecords.slice(
+  const paginatedGroups = groupedDays.slice(
     (displayedPage - 1) * RECORDS_PER_PAGE,
     displayedPage * RECORDS_PER_PAGE,
   );
@@ -221,6 +250,17 @@ export function DailyRecords({
       );
       return;
     }
+
+    const existingRecordsOnDate = records.filter(
+      (r) => r.date === draft.date && r.id !== editingId,
+    );
+    if (existingRecordsOnDate.length >= 2) {
+      onValidationError(
+        `Maximum limit of 2 attendance entries per day (Morning and Afternoon shifts) reached for ${formatDate(draft.date)}.`,
+      );
+      return;
+    }
+
     const saved = await onSave(
       {
         ...draft,
@@ -435,38 +475,57 @@ export function DailyRecords({
                 </p>
               </div>
             ) : (
-              paginatedRecords.map((record) => (
-                <article key={record.id} className="record-card">
-                  <div className="record-card-head">
-                    <div>
-                      <p className="record-date">{formatDate(record.date)}</p>
-                      <h3>{record.taskTitle}</h3>
-                      <span>
-                        {formatTime12Hour(record.timeIn)}–
-                        {formatTime12Hour(record.timeOut)} ·{" "}
-                        {formatHours(record.totalHours)}
-                      </span>
-                    </div>
-                    <div className="record-actions print-hide">
-                      <button
-                        className="icon-button"
-                        onClick={() => beginEdit(record)}
-                        aria-label={`Edit ${record.taskTitle}`}
-                        title="Edit record"
-                      >
-                        <Edit3 size={15} />
-                      </button>
-                      <button
-                        className="icon-button danger-icon"
-                        onClick={() => onDelete(record)}
-                        aria-label={`Delete ${record.taskTitle}`}
-                        title="Delete record"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+              paginatedGroups.map((group) => (
+                <article key={group.date} className="record-card day-group-card">
+                  <div className="day-group-head">
+                    <div className="day-group-title">
+                      <div>
+                        <p className="record-date">
+                            {formatDayName(group.date)}, {formatDate(group.date)}
+                          </p>
+                      </div>
+                      <div className="day-group-metrics">
+                        <span className="day-group-hours">
+                          {formatHours(group.totalHours)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <RecordDetails record={record} />
+                  <div className="day-group-shifts">
+                    {group.records.map((record) => (
+                      <div key={record.id} className="shift-item">
+                        <div className="record-card-head shift-item-head">
+                          <div>
+                            <h3>{record.taskTitle}</h3>
+                            <span>
+                              {formatTime12Hour(record.timeIn)}–
+                              {formatTime12Hour(record.timeOut)} ·{" "}
+                              {formatHours(record.totalHours)}
+                            </span>
+                          </div>
+                          <div className="record-actions print-hide">
+                              <button
+                                className="icon-button"
+                                onClick={() => beginEdit(record)}
+                                aria-label={`Edit ${record.taskTitle}`}
+                                title="Edit record"
+                              >
+                                <Edit3 size={15} />
+                              </button>
+                              <button
+                                className="icon-button danger-icon"
+                                onClick={() => onDelete(record)}
+                                aria-label={`Delete ${record.taskTitle}`}
+                                title="Delete record"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </div>
+                          <RecordDetails record={record} />
+                        </div>
+                      ))}
+                  </div>
                 </article>
               ))
             )}
@@ -528,7 +587,7 @@ function RecordDetails({ record }: { record: DailyRecord }) {
       {record.signature && (
         <div className="saved-signature">
           <strong>Signature</strong>
-          <img src={record.signature} alt="Saved signature" />
+          <img src={record.signature} alt="Saved signature" loading="lazy" />
         </div>
       )}
     </div>

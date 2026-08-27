@@ -1,21 +1,24 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { BookOpenCheck, Download, Printer } from "lucide-react";
 import { AppNavigation } from "./components/AppNavigation";
-import { DailyRecords } from "./components/DailyRecords";
-import { Dashboard } from "./components/Dashboard";
 import { LoginScreen } from "./components/LoginScreen";
-import { PrintReport } from "./components/PrintReport";
-import { Profile } from "./components/Profile";
 import { ProfileAvatar } from "./components/ProfileAvatar";
 import { ConfirmModal } from "./components/ui/ConfirmModal";
-import { ImageCropModal } from "./components/ui/ImageCropModal";
-import { BackupReminderModal } from "./components/ui/BackupReminderModal";
-import {
-  ReportOptionsModal,
-  type ReportAction,
-  type ReportFormat,
-} from "./components/ui/ReportOptionsModal";
 import { ToastViewport } from "./components/ui/ToastViewport";
+
+// Lazy load heavy components and modals
+const Dashboard = lazy(() => import("./components/Dashboard").then(m => ({ default: m.Dashboard })));
+const DailyRecords = lazy(() => import("./components/DailyRecords").then(m => ({ default: m.DailyRecords })));
+const Profile = lazy(() => import("./components/Profile").then(m => ({ default: m.Profile })));
+const PrintReport = lazy(() => import("./components/PrintReport").then(m => ({ default: m.PrintReport })));
+const ImageCropModal = lazy(() => import("./components/ui/ImageCropModal").then(m => ({ default: m.ImageCropModal })));
+const BackupReminderModal = lazy(() => import("./components/ui/BackupReminderModal").then(m => ({ default: m.BackupReminderModal })));
+const ReportOptionsModal = lazy(() => import("./components/ui/ReportOptionsModal").then(m => ({ 
+  default: m.ReportOptionsModal 
+})));
+
+// Type imports only
+import type { ReportAction, ReportFormat } from "./components/ui/ReportOptionsModal";
 import { useConfirm } from "./hooks/useConfirm";
 import { useObjectUrl } from "./hooks/useObjectUrl";
 import { useToast } from "./hooks/useToast";
@@ -58,6 +61,12 @@ const EMPTY_LOGIN_RATE_LIMIT: LoginRateLimit = {
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const prevTabRef = useRef<Tab>("dashboard");
+  const TAB_ORDER: Tab[] = ["dashboard", "records", "profile"];
+  const slideDir =
+    TAB_ORDER.indexOf(activeTab) > TAB_ORDER.indexOf(prevTabRef.current)
+      ? "left"
+      : "right";
   const [user, setUser] = useState<UserAccount | null>(null);
   const [profile, setProfile] = useState<StudentProfile>(emptyProfile);
   const [records, setRecords] = useState<DailyRecord[]>([]);
@@ -86,28 +95,20 @@ function App() {
   const backupStatus = getBackupReminderStatus(records, backupReminder, backupClock);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setBackupClock(Date.now()), 60 * 1000);
-    return () => window.clearInterval(timer);
+    // Defer timer to avoid blocking main thread
+    const timeout = window.setTimeout(() => {
+      const interval = window.setInterval(() => setBackupClock(Date.now()), 60 * 1000);
+      // Store cleanup for proper disposal
+      return () => window.clearInterval(interval);
+    }, 2000);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
-    Promise.all([
-      getStoredValue<UserAccount | null>(STORAGE_KEYS.user, null),
-      getStoredValue<StudentProfile>(STORAGE_KEYS.profile, emptyProfile),
-      getStoredValue<DailyRecord[]>(STORAGE_KEYS.records, []),
-      getStoredValue<Blob | null>(STORAGE_KEYS.profileImage, null),
-      getStoredValue<LocalCredentials | null>(STORAGE_KEYS.credentials, null),
-      getStoredValue<LoginRateLimit>(
-        STORAGE_KEYS.loginRateLimit,
-        EMPTY_LOGIN_RATE_LIMIT,
-      ),
-      getStoredValue<BackupReminderState>(
-        STORAGE_KEYS.backupReminder,
-        EMPTY_BACKUP_REMINDER,
-      ),
-    ])
-      .then(
-        ([
+    // Defer data loading to avoid blocking initial render
+    const loadData = async () => {
+      try {
+        const [
           savedUser,
           savedProfile,
           savedRecords,
@@ -115,20 +116,42 @@ function App() {
           savedCredentials,
           savedLoginRateLimit,
           savedBackupReminder,
-        ]) => {
-          setUser(savedUser);
-          setProfile(normalizeProfile(savedProfile));
-          setRecords(savedRecords);
-          setProfileImage(savedProfileImage);
-          setHasLocalAccount(Boolean(savedCredentials));
-          setLoginRateLimit(savedLoginRateLimit);
-          setBackupReminder(savedBackupReminder);
-        },
-      )
-      .catch(() =>
-        showToast("Your saved browser data could not be loaded.", "error"),
-      )
-      .finally(() => setLoading(false));
+        ] = await Promise.all([
+          getStoredValue<UserAccount | null>(STORAGE_KEYS.user, null),
+          getStoredValue<StudentProfile>(STORAGE_KEYS.profile, emptyProfile),
+          getStoredValue<DailyRecord[]>(STORAGE_KEYS.records, []),
+          getStoredValue<Blob | null>(STORAGE_KEYS.profileImage, null),
+          getStoredValue<LocalCredentials | null>(STORAGE_KEYS.credentials, null),
+          getStoredValue<LoginRateLimit>(
+            STORAGE_KEYS.loginRateLimit,
+            EMPTY_LOGIN_RATE_LIMIT,
+          ),
+          getStoredValue<BackupReminderState>(
+            STORAGE_KEYS.backupReminder,
+            EMPTY_BACKUP_REMINDER,
+          ),
+        ]);
+
+        setUser(savedUser);
+        setProfile(normalizeProfile(savedProfile));
+        setRecords(savedRecords);
+        setProfileImage(savedProfileImage);
+        setHasLocalAccount(Boolean(savedCredentials));
+        setLoginRateLimit(savedLoginRateLimit);
+        setBackupReminder(savedBackupReminder);
+      } catch {
+        showToast("Your saved browser data could not be loaded.", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Use requestIdleCallback for non-critical loading
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => loadData(), { timeout: 1000 });
+    } else {
+      setTimeout(loadData, 0);
+    }
   }, [showToast]);
 
   const handleLogin = useCallback(
@@ -304,7 +327,7 @@ function App() {
     if (!approved) return;
     await setStoredValue(STORAGE_KEYS.user, null);
     setUser(null);
-    setActiveTab("dashboard");
+    navigateTo("dashboard");
     showToast("You have been signed out.", "info");
   }
 
@@ -316,7 +339,7 @@ function App() {
       setRecords([]);
       setProfileImage(null);
       setRecordToEdit(null);
-      setActiveTab("dashboard");
+      navigateTo("dashboard");
       setHasLocalAccount(false);
       setLoginRateLimit(EMPTY_LOGIN_RATE_LIMIT);
       setBackupReminder(EMPTY_BACKUP_REMINDER);
@@ -513,9 +536,14 @@ function App() {
     }
   }
 
+  function navigateTo(tab: Tab) {
+    prevTabRef.current = activeTab;
+    setActiveTab(tab);
+  }
+
   function editFromDashboard(record: DailyRecord) {
     setRecordToEdit(record);
-    setActiveTab("records");
+    navigateTo("records");
   }
 
   if (loading) {
@@ -539,105 +567,129 @@ function App() {
         />
       ) : (
         <div className="app-shell">
-          {activeTab === "dashboard" && (
-            <header className="topbar print-hide">
-              <div className="brand-lockup">
-                <ProfileAvatar
-                  imageUrl={profileImageUrl}
-                  name={profile.fullName || user.name}
-                  onSelect={selectProfileImage}
+          <div className="tab-viewport">
+            <div key={activeTab} className="tab-panel" data-dir={slideDir}>
+              {activeTab === "dashboard" && (
+                <header className="topbar print-hide">
+                  <div className="brand-lockup">
+                    <ProfileAvatar
+                      imageUrl={profileImageUrl}
+                      name={profile.fullName || user.name}
+                      onSelect={selectProfileImage}
+                    />
+                    <div>
+                      <p>Personal OJT Logbook</p>
+                      <h1>{profile.fullName || user.name}</h1>
+                    </div>
+                  </div>
+                  <div className="topbar-actions">
+                    <button
+                      className="icon-button labeled"
+                      onClick={() => setReportAction("download")}
+                      aria-label="Download report"
+                      title="Download report"
+                    >
+                      <Download size={18} />
+                      <span>Download report</span>
+                    </button>
+                    <button
+                      className="icon-button labeled"
+                      onClick={() => setReportAction("print")}
+                      aria-label="Print report"
+                      title="Print report"
+                    >
+                      <Printer size={18} />
+                      <span>Print</span>
+                    </button>
+                  </div>
+                </header>
+              )}
+              <Suspense fallback={<div className="loading-fallback">Loading report...</div>}>
+                <PrintReport
+                  user={user}
+                  profile={profile}
+                  records={records}
+                  separateByMonth={separateReportMonths}
+                  template={reportTemplate}
                 />
-                <div>
-                  <p>Personal OJT Logbook</p>
-                  <h1>{profile.fullName || user.name}</h1>
-                </div>
-              </div>
-              <div className="topbar-actions">
-                <button
-                  className="icon-button labeled"
-                  onClick={() => setReportAction("download")}
-                  aria-label="Download report"
-                  title="Download report"
-                >
-                  <Download size={18} />
-                  <span>Download report</span>
-                </button>
-                <button
-                  className="icon-button labeled"
-                  onClick={() => setReportAction("print")}
-                  aria-label="Print report"
-                  title="Print report"
-                >
-                  <Printer size={18} />
-                  <span>Print</span>
-                </button>
-              </div>
-            </header>
+              </Suspense>
+              {activeTab === "dashboard" && (
+                <Suspense fallback={<div className="loading-fallback">Loading dashboard...</div>}>
+                  <Dashboard
+                    records={records}
+                    profile={profile}
+                    onOpenRecords={() => navigateTo("records")}
+                    onEditRecord={editFromDashboard}
+                    showBackupReminder={backupStatus.isDue}
+                    onExportBackup={exportBackup}
+                    onSnoozeBackup={snoozeBackupReminder}
+                  />
+                </Suspense>
+              )}
+              {activeTab === "records" && (
+                <Suspense fallback={<div className="loading-fallback">Loading records...</div>}>
+                  <DailyRecords
+                    records={records}
+                    initialRecord={recordToEdit}
+                    onInitialRecordHandled={clearRecordToEdit}
+                    onSave={saveRecord}
+                    onDelete={deleteRecord}
+                    onValidationError={(message) => showToast(message, "error")}
+                  />
+                </Suspense>
+              )}
+              {activeTab === "profile" && (
+                <Suspense fallback={<div className="loading-fallback">Loading profile...</div>}>
+                  <Profile
+                    profile={profile}
+                    onChange={setProfile}
+                    onSave={saveProfile}
+                    onSignOut={signOut}
+                    onExport={exportBackup}
+                    onImport={importBackup}
+                    onPrint={() => setReportAction("print")}
+                    profileImageUrl={profileImageUrl}
+                    onProfileImageSelect={selectProfileImage}
+                    onProfileImageRemove={removeProfileImage}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+          <AppNavigation activeTab={activeTab} onChange={navigateTo} />
+          {reportAction && (
+            <Suspense fallback={null}>
+              <ReportOptionsModal
+                action={reportAction}
+                separateByMonth={separateReportMonths}
+                format={reportFormat}
+                template={reportTemplate}
+                onSeparateByMonthChange={setSeparateReportMonths}
+                onFormatChange={setReportFormat}
+                onTemplateChange={setReportTemplate}
+                onCancel={() => setReportAction(null)}
+                onConfirm={createReport}
+              />
+            </Suspense>
           )}
-          <PrintReport
-            user={user}
-            profile={profile}
-            records={records}
-            separateByMonth={separateReportMonths}
-            template={reportTemplate}
-          />
-          {activeTab === "dashboard" && (
-            <Dashboard
-              records={records}
-              profile={profile}
-              onOpenRecords={() => setActiveTab("records")}
-              onEditRecord={editFromDashboard}
-              showBackupReminder={backupStatus.isDue}
-              onExportBackup={exportBackup}
-              onSnoozeBackup={snoozeBackupReminder}
-            />
+          {pendingProfileImage && (
+            <Suspense fallback={null}>
+              <ImageCropModal
+                file={pendingProfileImage}
+                onCancel={() => setPendingProfileImage(null)}
+                onApply={saveCroppedProfileImage}
+              />
+            </Suspense>
           )}
-          {activeTab === "records" && (
-            <DailyRecords
-              records={records}
-              initialRecord={recordToEdit}
-              onInitialRecordHandled={clearRecordToEdit}
-              onSave={saveRecord}
-              onDelete={deleteRecord}
-              onValidationError={(message) => showToast(message, "error")}
-            />
+          {activeTab === "dashboard" && backupStatus.isSignificantlyOverdue && (
+            <Suspense fallback={null}>
+              <BackupReminderModal
+                open={activeTab === "dashboard" && backupStatus.isSignificantlyOverdue}
+                onExport={exportBackup}
+                onSnooze={snoozeBackupReminder}
+              />
+            </Suspense>
           )}
-          {activeTab === "profile" && (
-            <Profile
-              profile={profile}
-              onChange={setProfile}
-              onSave={saveProfile}
-              onSignOut={signOut}
-              onExport={exportBackup}
-              onImport={importBackup}
-              onPrint={() => setReportAction("print")}
-              profileImageUrl={profileImageUrl}
-              onProfileImageSelect={selectProfileImage}
-              onProfileImageRemove={removeProfileImage}
-            />
-          )}
-          <AppNavigation activeTab={activeTab} onChange={setActiveTab} />
-          <ReportOptionsModal
-            action={reportAction}
-            separateByMonth={separateReportMonths}
-            format={reportFormat}
-            template={reportTemplate}
-            onSeparateByMonthChange={setSeparateReportMonths}
-            onFormatChange={setReportFormat}
-            onTemplateChange={setReportTemplate}
-            onCancel={() => setReportAction(null)}
-            onConfirm={createReport}
-          />
-          <ImageCropModal
-            file={pendingProfileImage}
-            onCancel={() => setPendingProfileImage(null)}
-            onApply={saveCroppedProfileImage}
-          />
-          <BackupReminderModal
-            open={activeTab === "dashboard" && backupStatus.isSignificantlyOverdue}
-            onExport={exportBackup}
-            onSnooze={snoozeBackupReminder}
-          />
         </div>
       )}
       <ToastViewport toasts={toasts} onDismiss={dismissToast} />

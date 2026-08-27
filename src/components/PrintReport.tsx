@@ -88,7 +88,7 @@ export function PrintReport({
                     {group.entries.some(({ record: item }) => Boolean(item.reflection?.trim())) && <td>{record.reflection || ""}</td>}
                     {group.entries.some(({ record: item }) => Boolean(item.signature)) && (
                       <td className="worklog-signature-cell">
-                        {record.signature && <img src={record.signature} alt="Record signature" />}
+                        {record.signature && <img src={record.signature} alt="Record signature" loading="lazy" />}
                       </td>
                     )}
                   </tr>
@@ -183,7 +183,7 @@ export function PrintReport({
             <aside className="print-signature-column" aria-label="Record signature">
               {record.signature && (
                 <div className="print-signature">
-                  <img src={record.signature} alt="Record signature" />
+                  <img src={record.signature} alt="Record signature" loading="lazy" />
                 </div>
               )}
             </aside>

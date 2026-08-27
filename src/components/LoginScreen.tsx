@@ -113,7 +113,7 @@ export function LoginScreen({
               <Info size={17} />
             </button>
           </div>
-          <img className="login-logo" src={logoUrl} alt="OJT Logbook" />
+          <img className="login-logo" src={logoUrl} alt="OJT Logbook" loading="eager" />
           <div className="login-heading">
             <p className="eyebrow">Welcome</p>
             <h2>Sign in to your logbook</h2>

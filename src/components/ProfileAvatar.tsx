@@ -35,7 +35,7 @@ export function ProfileAvatar({
         title={disabled ? "Select Edit to change photo" : "Upload profile photo"}
       >
         {imageUrl ? (
-          <img src={imageUrl} alt={`${name}'s profile`} />
+          <img src={imageUrl} alt={`${name}'s profile`} loading="lazy" />
         ) : (
           <UserRound size={size === "large" ? 34 : 22} aria-hidden="true" />
         )}

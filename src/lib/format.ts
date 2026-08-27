@@ -36,3 +36,10 @@ export function formatDate(value: string): string {
     year: "numeric",
   }).format(new Date(`${value}T00:00:00`));
 }
+
+export function formatDayName(value: string): string {
+  if (!value) return "";
+  return new Intl.DateTimeFormat("en-PH", {
+    weekday: "long",
+  }).format(new Date(`${value}T00:00:00`));
+}

@@ -95,8 +95,12 @@ export function Dashboard({
   })();
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60000);
-    return () => window.clearInterval(timer);
+    // Defer timer to after page load
+    const timer = window.setTimeout(() => {
+      const interval = window.setInterval(() => setNow(new Date()), 60000);
+      return () => window.clearInterval(interval);
+    }, 2000);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -147,7 +151,8 @@ export function Dashboard({
       timer = window.setTimeout(type, 34);
     };
     setTypedGreeting("");
-    timer = window.setTimeout(type, 220);
+    // Defer animation start to avoid blocking
+    timer = window.setTimeout(type, 500);
     return () => window.clearTimeout(timer);
   }, [greeting]);
 
@@ -198,7 +203,10 @@ export function Dashboard({
       )}
 
       <section className="dashboard-widgets" aria-label="OJT activity calendar">
-        <MiniCalendar records={records} ojtStartDate={profile.ojtStartDate} />
+        <MiniCalendar
+          records={records}
+          ojtStartDate={profile.ojtStartDate}
+        />
       </section>
 
       <section

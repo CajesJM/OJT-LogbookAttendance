@@ -93,7 +93,7 @@ export function SignaturePad({ value, onChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const drawingRef = useRef(false);
   const previousPointRef = useRef<Point | null>(null);
-  const [mode, setMode] = useState<SignatureMode>("draw");
+  const [mode, setMode] = useState<SignatureMode>("upload");
   const [uploadError, setUploadError] = useState("");
   const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(null);
   const [uploadConfirmed, setUploadConfirmed] = useState(false);
@@ -251,15 +251,6 @@ export function SignaturePad({ value, onChange }: Props) {
         role="radiogroup"
         aria-label="Signature input method"
       >
-        <label className={mode === "draw" ? "selected" : ""}>
-          <input
-            type="radio"
-            name="sig-mode"
-            checked={mode === "draw"}
-            onChange={() => setMode("draw")}
-          />
-          <PenLine size={14} /> Draw
-        </label>
         <label className={mode === "upload" ? "selected" : ""}>
           <input
             type="radio"
@@ -268,6 +259,15 @@ export function SignaturePad({ value, onChange }: Props) {
             onChange={() => setMode("upload")}
           />
           <Upload size={14} /> Upload
+        </label>
+        <label className={mode === "draw" ? "selected" : ""}>
+          <input
+            type="radio"
+            name="sig-mode"
+            checked={mode === "draw"}
+            onChange={() => setMode("draw")}
+          />
+          <PenLine size={14} /> Draw
         </label>
       </div>
       {mode === "draw" ? (
@@ -309,7 +309,7 @@ export function SignaturePad({ value, onChange }: Props) {
           )}
           {value && (
             <div className="signature-upload-preview">
-              <img src={value} alt="Uploaded signature preview" />
+              <img src={value} alt="Uploaded signature preview" loading="lazy" />
             </div>
           )}
         </div>
@@ -341,7 +341,7 @@ export function SignaturePad({ value, onChange }: Props) {
               Confirm that this image contains only your signature. Do not use a selfie, ID, private document, or another person’s signature.
             </p>
             <div className="signature-review-preview">
-              <img src={pendingUpload.dataUrl} alt="Signature image awaiting confirmation" />
+              <img src={pendingUpload.dataUrl} alt="Signature image awaiting confirmation" loading="lazy" />
             </div>
             {pendingUpload.unusualProportions && (
               <p className="signature-review-warning">
