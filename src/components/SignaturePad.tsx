@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Check, Eraser, Image as ImageIcon, PenLine, Upload, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Eraser,
+  Image as ImageIcon,
+  PenLine,
+  Upload,
+  X,
+} from "lucide-react";
 
 type Props = {
   value: string;
@@ -20,15 +28,37 @@ const SIGNATURE_WIDTH = 720;
 const SIGNATURE_HEIGHT = 220;
 
 function prepareSignatureImage(image: HTMLImageElement): PendingUpload | null {
-  const analysisScale = Math.min(1, 1200 / Math.max(image.naturalWidth, image.naturalHeight));
+  const analysisScale = Math.min(
+    1,
+    1200 / Math.max(image.naturalWidth, image.naturalHeight),
+  );
   const analysisCanvas = document.createElement("canvas");
-  analysisCanvas.width = Math.max(1, Math.round(image.naturalWidth * analysisScale));
-  analysisCanvas.height = Math.max(1, Math.round(image.naturalHeight * analysisScale));
-  const analysisContext = analysisCanvas.getContext("2d", { willReadFrequently: true });
+  analysisCanvas.width = Math.max(
+    1,
+    Math.round(image.naturalWidth * analysisScale),
+  );
+  analysisCanvas.height = Math.max(
+    1,
+    Math.round(image.naturalHeight * analysisScale),
+  );
+  const analysisContext = analysisCanvas.getContext("2d", {
+    willReadFrequently: true,
+  });
   if (!analysisContext) return null;
-  analysisContext.drawImage(image, 0, 0, analysisCanvas.width, analysisCanvas.height);
+  analysisContext.drawImage(
+    image,
+    0,
+    0,
+    analysisCanvas.width,
+    analysisCanvas.height,
+  );
 
-  const pixels = analysisContext.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height).data;
+  const pixels = analysisContext.getImageData(
+    0,
+    0,
+    analysisCanvas.width,
+    analysisCanvas.height,
+  ).data;
   let minX = analysisCanvas.width;
   let minY = analysisCanvas.height;
   let maxX = -1;
@@ -37,7 +67,11 @@ function prepareSignatureImage(image: HTMLImageElement): PendingUpload | null {
     for (let x = 0; x < analysisCanvas.width; x += 1) {
       const index = (y * analysisCanvas.width + x) * 4;
       const alpha = pixels[index + 3];
-      const hasInk = alpha > 20 && (pixels[index] < 245 || pixels[index + 1] < 245 || pixels[index + 2] < 245);
+      const hasInk =
+        alpha > 20 &&
+        (pixels[index] < 245 ||
+          pixels[index + 1] < 245 ||
+          pixels[index + 2] < 245);
       if (!hasInk) continue;
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
@@ -47,7 +81,10 @@ function prepareSignatureImage(image: HTMLImageElement): PendingUpload | null {
   }
   if (maxX < minX || maxY < minY) return null;
 
-  const trimPadding = Math.max(4, Math.round(Math.min(analysisCanvas.width, analysisCanvas.height) * 0.025));
+  const trimPadding = Math.max(
+    4,
+    Math.round(Math.min(analysisCanvas.width, analysisCanvas.height) * 0.025),
+  );
   minX = Math.max(0, minX - trimPadding);
   minY = Math.max(0, minY - trimPadding);
   maxX = Math.min(analysisCanvas.width - 1, maxX + trimPadding);
@@ -95,7 +132,9 @@ export function SignaturePad({ value, onChange }: Props) {
   const previousPointRef = useRef<Point | null>(null);
   const [mode, setMode] = useState<SignatureMode>("upload");
   const [uploadError, setUploadError] = useState("");
-  const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(null);
+  const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(
+    null,
+  );
   const [uploadConfirmed, setUploadConfirmed] = useState(false);
 
   useEffect(() => {
@@ -120,9 +159,7 @@ export function SignaturePad({ value, onChange }: Props) {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [pendingUpload]);
 
-  function pointFromEvent(
-    event: React.PointerEvent<HTMLCanvasElement>,
-  ): Point {
+  function pointFromEvent(event: React.PointerEvent<HTMLCanvasElement>): Point {
     const canvas = event.currentTarget;
     const bounds = canvas.getBoundingClientRect();
     return {
@@ -211,10 +248,12 @@ export function SignaturePad({ value, onChange }: Props) {
         setUploadConfirmed(false);
         setPendingUpload(prepared);
       };
-      image.onerror = () => setUploadError("The selected image could not be opened.");
+      image.onerror = () =>
+        setUploadError("The selected image could not be opened.");
       image.src = reader.result;
     };
-    reader.onerror = () => setUploadError("The selected image could not be read.");
+    reader.onerror = () =>
+      setUploadError("The selected image could not be read.");
     reader.readAsDataURL(file);
   }
 
@@ -300,16 +339,18 @@ export function SignaturePad({ value, onChange }: Props) {
           >
             <Upload size={20} />
             <span>Choose an image</span>
-            <small>
-              JPG, PNG, or WebP — max {MAX_SIZE_MB} MB
-            </small>
+            <small>JPG, PNG, or WebP — max {MAX_SIZE_MB} MB</small>
           </button>
           {uploadError && (
             <p className="signature-upload-error">{uploadError}</p>
           )}
           {value && (
             <div className="signature-upload-preview">
-              <img src={value} alt="Uploaded signature preview" loading="lazy" />
+              <img
+                src={value}
+                alt="Uploaded signature preview"
+                loading="lazy"
+              />
             </div>
           )}
         </div>
@@ -323,7 +364,9 @@ export function SignaturePad({ value, onChange }: Props) {
         <div
           className="modal-backdrop signature-review-backdrop"
           role="presentation"
-          onMouseDown={(event) => event.target === event.currentTarget && setPendingUpload(null)}
+          onMouseDown={(event) =>
+            event.target === event.currentTarget && setPendingUpload(null)
+          }
         >
           <section
             className="modal signature-review-modal"
@@ -332,31 +375,58 @@ export function SignaturePad({ value, onChange }: Props) {
             aria-labelledby="signature-review-title"
             aria-describedby="signature-review-description"
           >
-            <div className="modal-icon"><ImageIcon size={22} aria-hidden="true" /></div>
-            <button className="icon-button modal-close" type="button" onClick={() => setPendingUpload(null)} aria-label="Close signature review">
+            <div className="modal-icon">
+              <ImageIcon size={22} aria-hidden="true" />
+            </div>
+            <button
+              className="icon-button modal-close"
+              type="button"
+              onClick={() => setPendingUpload(null)}
+              aria-label="Close signature review"
+            >
               <X size={18} />
             </button>
             <h2 id="signature-review-title">Review signature image</h2>
             <p id="signature-review-description">
-              Confirm that this image contains only your signature. Do not use a selfie, ID, private document, or another person’s signature.
+              Confirm that this image contains only your signature. Do not use a
+              selfie, ID, private document, or another person’s signature.
             </p>
             <div className="signature-review-preview">
-              <img src={pendingUpload.dataUrl} alt="Signature image awaiting confirmation" loading="lazy" />
+              <img
+                src={pendingUpload.dataUrl}
+                alt="Signature image awaiting confirmation"
+                loading="lazy"
+              />
             </div>
             {pendingUpload.unusualProportions && (
               <p className="signature-review-warning">
-                <AlertTriangle size={16} aria-hidden="true" /> This image has unusual proportions for a signature. Review it carefully before continuing.
+                <AlertTriangle size={16} aria-hidden="true" /> This image has
+                unusual proportions for a signature. Review it carefully before
+                continuing.
               </p>
             )}
             <label className="signature-review-confirm">
-              <input type="checkbox" checked={uploadConfirmed} onChange={(event) => setUploadConfirmed(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={uploadConfirmed}
+                onChange={(event) => setUploadConfirmed(event.target.checked)}
+              />
               <span>This image contains my signature only.</span>
             </label>
             <div className="modal-actions">
-              <button className="button secondary" type="button" onClick={chooseAnotherUpload}>
+              <button
+                className="button secondary"
+                type="button"
+                onClick={chooseAnotherUpload}
+              >
                 <Upload size={17} /> Choose another
               </button>
-              <button className="button primary" type="button" onClick={applyUploadedSignature} disabled={!uploadConfirmed}>
+              <button
+                className="button primary"
+                type="button"
+                onClick={applyUploadedSignature}
+                disabled={!uploadConfirmed}
+              >
                 <Check size={17} /> Use signature
               </button>
             </div>

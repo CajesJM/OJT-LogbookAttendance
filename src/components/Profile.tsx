@@ -1,5 +1,15 @@
 import { ChangeEvent, FormEvent, useState } from "react";
-import { Download, Info, LogOut, Pencil, Printer, Save, Trash2, Upload, X } from "lucide-react";
+import {
+  Download,
+  Info,
+  LogOut,
+  Pencil,
+  Printer,
+  Save,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { AccountHelpModal } from "./ui/AccountHelpModal";
 import { normalizeDutyDays } from "../lib/completionEstimate";
@@ -76,12 +86,16 @@ export function Profile({
     const nextDays = currentDays.includes(day)
       ? currentDays.filter((currentDay) => currentDay !== day)
       : [...currentDays, day];
-    if (nextDays.length > 0) update("dutyDays", nextDays.sort((a, b) => a - b));
+    if (nextDays.length > 0)
+      update(
+        "dutyDays",
+        nextDays.sort((a, b) => a - b),
+      );
   }
 
   async function chooseBackup(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file && await onImport(file)) {
+    if (file && (await onImport(file))) {
       setIsEditing(false);
       setEditSnapshot(null);
     }
@@ -123,15 +137,27 @@ export function Profile({
           </div>
           <div className="profile-head-actions">
             {isEditing ? (
-              <button className="button secondary" type="button" onClick={cancelEditing}>
+              <button
+                className="button secondary"
+                type="button"
+                onClick={cancelEditing}
+              >
                 <X size={16} /> Cancel
               </button>
             ) : (
-              <button className="button secondary" type="button" onClick={beginEditing}>
+              <button
+                className="button secondary"
+                type="button"
+                onClick={beginEditing}
+              >
                 <Pencil size={16} /> Edit
               </button>
             )}
-            <button className="button secondary" type="button" onClick={onSignOut}>
+            <button
+              className="button secondary"
+              type="button"
+              onClick={onSignOut}
+            >
               <LogOut size={18} /> Sign out
             </button>
           </div>
@@ -219,7 +245,9 @@ export function Profile({
             <legend>Regular duty days</legend>
             <div className="duty-day-options">
               {DUTY_DAY_OPTIONS.map((day) => {
-                const selected = normalizeDutyDays(profile.dutyDays).includes(day.value);
+                const selected = normalizeDutyDays(profile.dutyDays).includes(
+                  day.value,
+                );
                 return (
                   <label key={day.value} className={selected ? "selected" : ""}>
                     <input
@@ -244,7 +272,10 @@ export function Profile({
       <aside className="profile-tools">
         <section className="surface tool-section backup-tool">
           <div className="tool-heading-row">
-            <div><p className="section-kicker">Data safety</p><h2>Backup and restore</h2></div>
+            <div>
+              <p className="section-kicker">Data safety</p>
+              <h2>Backup and restore</h2>
+            </div>
             <button
               className="icon-button account-help-button"
               type="button"
@@ -284,7 +315,10 @@ export function Profile({
           </button>
         </section>
       </aside>
-      <AccountHelpModal open={showAccountHelp} onClose={() => setShowAccountHelp(false)} />
+      <AccountHelpModal
+        open={showAccountHelp}
+        onClose={() => setShowAccountHelp(false)}
+      />
     </main>
   );
 }

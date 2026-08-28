@@ -1,4 +1,11 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { BookOpenCheck, Download, Printer } from "lucide-react";
 import { AppNavigation } from "./components/AppNavigation";
 import { LoginScreen } from "./components/LoginScreen";
@@ -7,18 +14,41 @@ import { ConfirmModal } from "./components/ui/ConfirmModal";
 import { ToastViewport } from "./components/ui/ToastViewport";
 
 // Lazy load heavy components and modals
-const Dashboard = lazy(() => import("./components/Dashboard").then(m => ({ default: m.Dashboard })));
-const DailyRecords = lazy(() => import("./components/DailyRecords").then(m => ({ default: m.DailyRecords })));
-const Profile = lazy(() => import("./components/Profile").then(m => ({ default: m.Profile })));
-const PrintReport = lazy(() => import("./components/PrintReport").then(m => ({ default: m.PrintReport })));
-const ImageCropModal = lazy(() => import("./components/ui/ImageCropModal").then(m => ({ default: m.ImageCropModal })));
-const BackupReminderModal = lazy(() => import("./components/ui/BackupReminderModal").then(m => ({ default: m.BackupReminderModal })));
-const ReportOptionsModal = lazy(() => import("./components/ui/ReportOptionsModal").then(m => ({ 
-  default: m.ReportOptionsModal 
-})));
+const Dashboard = lazy(() =>
+  import("./components/Dashboard").then((m) => ({ default: m.Dashboard })),
+);
+const DailyRecords = lazy(() =>
+  import("./components/DailyRecords").then((m) => ({
+    default: m.DailyRecords,
+  })),
+);
+const Profile = lazy(() =>
+  import("./components/Profile").then((m) => ({ default: m.Profile })),
+);
+const PrintReport = lazy(() =>
+  import("./components/PrintReport").then((m) => ({ default: m.PrintReport })),
+);
+const ImageCropModal = lazy(() =>
+  import("./components/ui/ImageCropModal").then((m) => ({
+    default: m.ImageCropModal,
+  })),
+);
+const BackupReminderModal = lazy(() =>
+  import("./components/ui/BackupReminderModal").then((m) => ({
+    default: m.BackupReminderModal,
+  })),
+);
+const ReportOptionsModal = lazy(() =>
+  import("./components/ui/ReportOptionsModal").then((m) => ({
+    default: m.ReportOptionsModal,
+  })),
+);
 
 // Type imports only
-import type { ReportAction, ReportFormat } from "./components/ui/ReportOptionsModal";
+import type {
+  ReportAction,
+  ReportFormat,
+} from "./components/ui/ReportOptionsModal";
 import { useConfirm } from "./hooks/useConfirm";
 import { useObjectUrl } from "./hooks/useObjectUrl";
 import { useToast } from "./hooks/useToast";
@@ -93,12 +123,19 @@ function App() {
   const { toasts, showToast, dismissToast } = useToast();
   const { dialog, confirm, accept, cancel } = useConfirm();
   const profileImageUrl = useObjectUrl(profileImage);
-  const backupStatus = getBackupReminderStatus(records, backupReminder, backupClock);
+  const backupStatus = getBackupReminderStatus(
+    records,
+    backupReminder,
+    backupClock,
+  );
 
   useEffect(() => {
     // Defer timer to avoid blocking main thread
     const timeout = window.setTimeout(() => {
-      const interval = window.setInterval(() => setBackupClock(Date.now()), 60 * 1000);
+      const interval = window.setInterval(
+        () => setBackupClock(Date.now()),
+        60 * 1000,
+      );
       // Store cleanup for proper disposal
       return () => window.clearInterval(interval);
     }, 2000);
@@ -122,7 +159,10 @@ function App() {
           getStoredValue<StudentProfile>(STORAGE_KEYS.profile, emptyProfile),
           getStoredValue<DailyRecord[]>(STORAGE_KEYS.records, []),
           getStoredValue<Blob | null>(STORAGE_KEYS.profileImage, null),
-          getStoredValue<LocalCredentials | null>(STORAGE_KEYS.credentials, null),
+          getStoredValue<LocalCredentials | null>(
+            STORAGE_KEYS.credentials,
+            null,
+          ),
           getStoredValue<LoginRateLimit>(
             STORAGE_KEYS.loginRateLimit,
             EMPTY_LOGIN_RATE_LIMIT,
@@ -148,7 +188,7 @@ function App() {
     };
 
     // Use requestIdleCallback for non-critical loading
-    if ('requestIdleCallback' in window) {
+    if ("requestIdleCallback" in window) {
       requestIdleCallback(() => loadData(), { timeout: 1000 });
     } else {
       setTimeout(loadData, 0);
@@ -612,7 +652,11 @@ function App() {
                   </div>
                 </header>
               )}
-              <Suspense fallback={<div className="loading-fallback">Loading report...</div>}>
+              <Suspense
+                fallback={
+                  <div className="loading-fallback">Loading report...</div>
+                }
+              >
                 <PrintReport
                   user={user}
                   profile={profile}
@@ -622,7 +666,11 @@ function App() {
                 />
               </Suspense>
               {activeTab === "dashboard" && (
-                <Suspense fallback={<div className="loading-fallback">Loading dashboard...</div>}>
+                <Suspense
+                  fallback={
+                    <div className="loading-fallback">Loading dashboard...</div>
+                  }
+                >
                   <Dashboard
                     records={records}
                     profile={profile}
@@ -635,7 +683,11 @@ function App() {
                 </Suspense>
               )}
               {activeTab === "records" && (
-                <Suspense fallback={<div className="loading-fallback">Loading records...</div>}>
+                <Suspense
+                  fallback={
+                    <div className="loading-fallback">Loading records...</div>
+                  }
+                >
                   <DailyRecords
                     records={records}
                     initialRecord={recordToEdit}
@@ -649,7 +701,11 @@ function App() {
                 </Suspense>
               )}
               {activeTab === "profile" && (
-                <Suspense fallback={<div className="loading-fallback">Loading profile...</div>}>
+                <Suspense
+                  fallback={
+                    <div className="loading-fallback">Loading profile...</div>
+                  }
+                >
                   <Profile
                     profile={profile}
                     onChange={setProfile}
@@ -698,7 +754,10 @@ function App() {
           {activeTab === "dashboard" && backupStatus.isSignificantlyOverdue && (
             <Suspense fallback={null}>
               <BackupReminderModal
-                open={activeTab === "dashboard" && backupStatus.isSignificantlyOverdue}
+                open={
+                  activeTab === "dashboard" &&
+                  backupStatus.isSignificantlyOverdue
+                }
                 onExport={exportBackup}
                 onSnooze={snoozeBackupReminder}
               />

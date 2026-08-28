@@ -32,7 +32,9 @@ export function ProfileAvatar({
         onClick={() => inputRef.current?.click()}
         disabled={disabled}
         aria-label={disabled ? "Profile photo" : "Upload profile photo"}
-        title={disabled ? "Select Edit to change photo" : "Upload profile photo"}
+        title={
+          disabled ? "Select Edit to change photo" : "Upload profile photo"
+        }
       >
         {imageUrl ? (
           <img src={imageUrl} alt={`${name}'s profile`} loading="lazy" />

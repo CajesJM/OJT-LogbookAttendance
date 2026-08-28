@@ -132,8 +132,7 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
 
       const weekIdx = calendarWeeks.findIndex(
         (week) =>
-          week[3].getFullYear() === selectedYear &&
-          week[3].getMonth() === m,
+          week[3].getFullYear() === selectedYear && week[3].getMonth() === m,
       );
 
       if (weekIdx !== -1) {
@@ -165,7 +164,8 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
       if (selectedYear === currentYear) {
         container.scrollTo({
           left: container.scrollWidth - container.clientWidth,
-          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
             ? "auto"
             : "smooth",
         });
@@ -208,18 +208,24 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
         <div>
           <span>OJT activity</span>
           <strong>
-            {activeDays} active day{activeDays === 1 ? "" : "s"} ({selectedYear})
+            {activeDays} active day{activeDays === 1 ? "" : "s"} ({selectedYear}
+            )
           </strong>
         </div>
         <div className="activity-heading-actions">
           <b className="activity-total-hours">
-            {totalHours.toLocaleString("en-PH", { maximumFractionDigits: 1 })} hrs
+            {totalHours.toLocaleString("en-PH", { maximumFractionDigits: 1 })}{" "}
+            hrs
           </b>
           {availableYears.length >= 1 && (
             <div
               className={`activity-year-buttons${availableYears.length > 2 ? " is-scrollable" : ""}`}
               tabIndex={availableYears.length > 2 ? 0 : undefined}
-              aria-label={availableYears.length > 2 ? "Scroll through activity years" : "Activity years"}
+              aria-label={
+                availableYears.length > 2
+                  ? "Scroll through activity years"
+                  : "Activity years"
+              }
             >
               {availableYears.map((yr) => (
                 <button
@@ -290,7 +296,9 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
                       className={`activity-cell level-${level}${key === todayKey ? " is-today" : ""}${key === ojtStartDate ? " is-start" : ""}${isFuture ? " is-future" : ""}${isOtherYear ? " is-other-year" : ""}${isSelected ? " is-selected" : ""}`}
                       onClick={() => {
                         if (!isOtherYear) {
-                          setSelectedDateKey((prev) => (prev === key ? null : key));
+                          setSelectedDateKey((prev) =>
+                            prev === key ? null : key,
+                          );
                         }
                       }}
                       title={`${dateLabel}: ${count ? `${count} entry (${hours.toLocaleString("en-PH", { maximumFractionDigits: 1 })} hrs)` : "No OJT record"}`}
@@ -334,37 +342,58 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
             <div className="activity-day-records-list">
               {selectedDayInfo.records.map((rec) => (
                 <div key={rec.id} className="activity-day-record-card">
-                  <p className="activity-day-record-title">{rec.taskTitle || "OJT Daily Record"}</p>
+                  <p className="activity-day-record-title">
+                    {rec.taskTitle || "OJT Daily Record"}
+                  </p>
                   <p className="activity-day-time">
-                    <span>{formatTime12Hour(rec.timeIn)} – {formatTime12Hour(rec.timeOut)}</span>
+                    <span>
+                      {formatTime12Hour(rec.timeIn)} –{" "}
+                      {formatTime12Hour(rec.timeOut)}
+                    </span>
                     <strong>({rec.totalHours} hrs)</strong>
                   </p>
 
                   {rec.activities && (
                     <div className="activity-day-section">
-                      <span className="activity-day-section-label">Activities:</span>
-                      <p className="activity-day-section-text">{rec.activities}</p>
+                      <span className="activity-day-section-label">
+                        Activities:
+                      </span>
+                      <p className="activity-day-section-text">
+                        {rec.activities}
+                      </p>
                     </div>
                   )}
 
                   {rec.skillsLearned && (
                     <div className="activity-day-section">
-                      <span className="activity-day-section-label">Skills:</span>
-                      <p className="activity-day-section-text">{rec.skillsLearned}</p>
+                      <span className="activity-day-section-label">
+                        Skills:
+                      </span>
+                      <p className="activity-day-section-text">
+                        {rec.skillsLearned}
+                      </p>
                     </div>
                   )}
 
                   {rec.challenges && (
                     <div className="activity-day-section">
-                      <span className="activity-day-section-label">Challenges:</span>
-                      <p className="activity-day-section-text">{rec.challenges}</p>
+                      <span className="activity-day-section-label">
+                        Challenges:
+                      </span>
+                      <p className="activity-day-section-text">
+                        {rec.challenges}
+                      </p>
                     </div>
                   )}
 
                   {rec.reflection && (
                     <div className="activity-day-section">
-                      <span className="activity-day-section-label">Reflection:</span>
-                      <p className="activity-day-section-text">{rec.reflection}</p>
+                      <span className="activity-day-section-label">
+                        Reflection:
+                      </span>
+                      <p className="activity-day-section-text">
+                        {rec.reflection}
+                      </p>
                     </div>
                   )}
                 </div>

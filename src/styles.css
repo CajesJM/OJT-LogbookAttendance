@@ -84,8 +84,13 @@ label.button:focus-within,
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Optimize image rendering */
@@ -877,7 +882,9 @@ button.activity-cell {
   cursor: pointer;
   padding: 0;
   appearance: none;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
 }
 button.activity-cell:hover:not(:disabled):not(.is-other-year) {
   transform: scale(1.18);
@@ -900,8 +907,14 @@ button.activity-cell.is-selected {
   animation: detail-slide-in 0.18s ease;
 }
 @keyframes detail-slide-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .activity-day-details-header {
   display: flex;
@@ -1566,7 +1579,9 @@ label {
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
 }
 .signature-mode-toggle label:hover {
   color: var(--primary);
@@ -1601,7 +1616,9 @@ label {
   background: #fbfcfb;
   color: var(--muted);
   cursor: pointer;
-  transition: border-color 0.16s ease, background 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease;
 }
 .signature-upload-button:hover {
   border-color: var(--primary);
@@ -2087,7 +2104,10 @@ label {
   cursor: pointer;
   font-size: 0.68rem;
   line-height: 1;
-  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
 }
 .duty-day-options label.selected {
   border-color: var(--primary);
@@ -2198,7 +2218,10 @@ label {
   font-size: 0.72rem;
   font-weight: 750;
   cursor: pointer;
-  transition: flex-basis 220ms ease, width 220ms ease, background 180ms ease,
+  transition:
+    flex-basis 220ms ease,
+    width 220ms ease,
+    background 180ms ease,
     color 180ms ease;
 }
 .bottom-nav-tab svg {
@@ -2211,7 +2234,10 @@ label {
   opacity: 0;
   white-space: nowrap;
   transform: translateX(-4px);
-  transition: max-width 220ms ease, opacity 160ms ease, transform 180ms ease;
+  transition:
+    max-width 220ms ease,
+    opacity 160ms ease,
+    transform 180ms ease;
 }
 .bottom-nav-tab:hover {
   background: rgba(255, 255, 255, 0.09);
@@ -2247,7 +2273,9 @@ label {
   color: #ffffff;
   cursor: pointer;
   box-shadow: 0 7px 16px rgba(23, 107, 85, 0.3);
-  transition: transform 180ms ease, background 180ms ease,
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
     box-shadow 180ms ease;
 }
 .bottom-nav-add:hover {
@@ -2314,12 +2342,24 @@ label {
   color: var(--danger);
 }
 @keyframes toast-fade-in {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes toast-fade-out {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-6px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 .modal-backdrop {
@@ -2517,7 +2557,9 @@ label {
   border: 1px solid var(--line);
   border-radius: 7px;
   cursor: pointer;
-  transition: background 0.16s ease, border-color 0.16s ease;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease;
 }
 .report-template-options > label:hover,
 .report-template-options > label.selected {
@@ -2626,7 +2668,9 @@ label {
   border: 1px solid var(--line);
   border-radius: 7px;
   cursor: pointer;
-  transition: background 0.16s ease, border-color 0.16s ease;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease;
 }
 .report-layout-options label:hover,
 .report-layout-options label.selected {

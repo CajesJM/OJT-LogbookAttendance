@@ -50,20 +50,22 @@ export function Dashboard({
     requiredHours > 0
       ? Math.min(100, Math.round((totalHours / requiredHours) * 100))
       : 0;
-  const progressState = progress >= 100
-    ? "completed"
-    : progress >= 75
-      ? "almost-there"
-      : progress >= 25
-        ? "in-progress"
-        : "getting-started";
-  const progressStatus = progress >= 100
-    ? "Completed"
-    : progress >= 75
-      ? "Almost there"
-      : progress >= 25
-        ? "In progress"
-        : "Getting started";
+  const progressState =
+    progress >= 100
+      ? "completed"
+      : progress >= 75
+        ? "almost-there"
+        : progress >= 25
+          ? "in-progress"
+          : "getting-started";
+  const progressStatus =
+    progress >= 100
+      ? "Completed"
+      : progress >= 75
+        ? "Almost there"
+        : progress >= 25
+          ? "In progress"
+          : "Getting started";
   const remaining = Math.max(0, requiredHours - totalHours);
   const recentRecords = [...records]
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -97,7 +99,10 @@ export function Dashboard({
         detail: "Your rendered hours have reached the required total.",
       };
     }
-    const roundedWeeks = Math.max(1, Math.ceil(completionEstimate.weeksRemaining));
+    const roundedWeeks = Math.max(
+      1,
+      Math.ceil(completionEstimate.weeksRemaining),
+    );
     return {
       title: completionEstimate.completionDate.toLocaleDateString("en-PH", {
         month: "long",
@@ -183,7 +188,9 @@ export function Dashboard({
               })}
             </p>
             <h2 className="typing-greeting" aria-label={greeting}>
-              <span className="typing-text" aria-hidden="true">{typedGreeting}</span>
+              <span className="typing-text" aria-hidden="true">
+                {typedGreeting}
+              </span>
               <i className="typing-cursor" aria-hidden="true" />
             </h2>
             <p>Keep your training record current and ready to submit.</p>
@@ -217,19 +224,32 @@ export function Dashboard({
       </section>
 
       {showBackupReminder && (
-        <section className="backup-reminder-banner" aria-labelledby="backup-banner-title">
+        <section
+          className="backup-reminder-banner"
+          aria-labelledby="backup-banner-title"
+        >
           <div className="backup-reminder-symbol">
             <HardDriveDownload size={22} aria-hidden="true" />
           </div>
           <div className="backup-reminder-copy">
             <h2 id="backup-banner-title">Keep your logbook protected</h2>
-            <p>It has been at least seven days since your records were backed up. Export a copy before browser data is cleared or this device becomes unavailable.</p>
+            <p>
+              It has been at least seven days since your records were backed up.
+              Export a copy before browser data is cleared or this device
+              becomes unavailable.
+            </p>
           </div>
           <div className="backup-reminder-actions">
-            <button className="button secondary" onClick={() => void onSnoozeBackup()}>
+            <button
+              className="button secondary"
+              onClick={() => void onSnoozeBackup()}
+            >
               <Clock3 size={16} /> Remind me later
             </button>
-            <button className="button primary" onClick={() => void onExportBackup()}>
+            <button
+              className="button primary"
+              onClick={() => void onExportBackup()}
+            >
               <Download size={17} /> Export backup
             </button>
           </div>
@@ -237,10 +257,7 @@ export function Dashboard({
       )}
 
       <section className="dashboard-widgets" aria-label="OJT activity calendar">
-        <MiniCalendar
-          records={records}
-          ojtStartDate={profile.ojtStartDate}
-        />
+        <MiniCalendar records={records} ojtStartDate={profile.ojtStartDate} />
       </section>
 
       <section
@@ -265,10 +282,15 @@ export function Dashboard({
           aria-valuemax={100}
           aria-valuenow={progress}
         >
-          <div className="progress-fill" style={{ width: `${animatedProgress}%` }} />
+          <div
+            className="progress-fill"
+            style={{ width: `${animatedProgress}%` }}
+          />
           <span
             className="progress-value"
-            style={{ left: `clamp(22px, ${animatedProgress}%, calc(100% - 22px))` }}
+            style={{
+              left: `clamp(22px, ${animatedProgress}%, calc(100% - 22px))`,
+            }}
           >
             {animatedProgress}%
           </span>
@@ -280,7 +302,10 @@ export function Dashboard({
           <span>75%</span>
           <span>{formatHours(requiredHours)}</span>
         </div>
-        <div className={`completion-estimate status-${completionEstimate.status}`} aria-live="polite">
+        <div
+          className={`completion-estimate status-${completionEstimate.status}`}
+          aria-live="polite"
+        >
           <div className="completion-estimate-copy">
             <span>Estimated completion</span>
             <strong>{estimateContent.title}</strong>

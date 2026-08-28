@@ -34,26 +34,72 @@ export function ClearBrowserDataModal({ open, onClose, onClear }: Props) {
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && !clearing && onClose()}>
-      <section className="modal clear-data-modal" role="alertdialog" aria-modal="true" aria-labelledby="clear-data-title" aria-describedby="clear-data-description">
-        <div className="modal-icon danger"><AlertTriangle size={23} aria-hidden="true" /></div>
-        <button className="icon-button modal-close" onClick={onClose} disabled={clearing} aria-label="Close delete account dialog"><X size={18} /></button>
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onMouseDown={(event) =>
+        event.target === event.currentTarget && !clearing && onClose()
+      }
+    >
+      <section
+        className="modal clear-data-modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="clear-data-title"
+        aria-describedby="clear-data-description"
+      >
+        <div className="modal-icon danger">
+          <AlertTriangle size={23} aria-hidden="true" />
+        </div>
+        <button
+          className="icon-button modal-close"
+          onClick={onClose}
+          disabled={clearing}
+          aria-label="Close delete account dialog"
+        >
+          <X size={18} />
+        </button>
         <h2 id="clear-data-title">Delete this local account?</h2>
-        <p id="clear-data-description">This permanently removes the account and all OJT information saved in this browser.</p>
+        <p id="clear-data-description">
+          This permanently removes the account and all OJT information saved in
+          this browser.
+        </p>
         <ul className="clear-data-list">
           <li>Username and password</li>
           <li>Profile details and profile photo</li>
           <li>Daily records, reflections, and signatures</li>
         </ul>
-        <p className="clear-data-warning">This cannot be undone without an exported backup.</p>
+        <p className="clear-data-warning">
+          This cannot be undone without an exported backup.
+        </p>
         <label className="clear-data-confirmation">
-          <span>Type <b>DELETE</b> to continue</span>
-          <input value={confirmation} onChange={(event) => setConfirmation(event.target.value.toUpperCase())} autoComplete="off" placeholder="DELETE" />
+          <span>
+            Type <b>DELETE</b> to continue
+          </span>
+          <input
+            value={confirmation}
+            onChange={(event) =>
+              setConfirmation(event.target.value.toUpperCase())
+            }
+            autoComplete="off"
+            placeholder="DELETE"
+          />
         </label>
         <div className="modal-actions">
-          <button className="button secondary" onClick={onClose} disabled={clearing}>Cancel</button>
-          <button className="button danger-solid" onClick={clearData} disabled={confirmation !== "DELETE" || clearing}>
-            <Trash2 size={17} /> {clearing ? "Deleting..." : "Delete account and data"}
+          <button
+            className="button secondary"
+            onClick={onClose}
+            disabled={clearing}
+          >
+            Cancel
+          </button>
+          <button
+            className="button danger-solid"
+            onClick={clearData}
+            disabled={confirmation !== "DELETE" || clearing}
+          >
+            <Trash2 size={17} />{" "}
+            {clearing ? "Deleting..." : "Delete account and data"}
           </button>
         </div>
       </section>

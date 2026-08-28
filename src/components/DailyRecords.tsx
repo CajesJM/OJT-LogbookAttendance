@@ -151,10 +151,7 @@ export function DailyRecords({
 
     for (const [date, list] of map.entries()) {
       list.sort((a, b) => (a.timeIn || "").localeCompare(b.timeIn || ""));
-      const totalHours = list.reduce(
-        (sum, r) => sum + (r.totalHours || 0),
-        0,
-      );
+      const totalHours = list.reduce((sum, r) => sum + (r.totalHours || 0), 0);
       groups.push({ date, totalHours, records: list });
     }
 
@@ -475,13 +472,16 @@ export function DailyRecords({
               </div>
             ) : (
               paginatedGroups.map((group) => (
-                <article key={group.date} className="record-card day-group-card">
+                <article
+                  key={group.date}
+                  className="record-card day-group-card"
+                >
                   <div className="day-group-head">
                     <div className="day-group-title">
                       <div>
                         <p className="record-date">
-                            {formatDayName(group.date)}, {formatDate(group.date)}
-                          </p>
+                          {formatDayName(group.date)}, {formatDate(group.date)}
+                        </p>
                       </div>
                       <div className="day-group-metrics">
                         <span className="day-group-hours">
@@ -503,27 +503,27 @@ export function DailyRecords({
                             </span>
                           </div>
                           <div className="record-actions print-hide">
-                              <button
-                                className="icon-button"
-                                onClick={() => beginEdit(record)}
-                                aria-label={`Edit ${record.taskTitle}`}
-                                title="Edit record"
-                              >
-                                <Edit3 size={15} />
-                              </button>
-                              <button
-                                className="icon-button danger-icon"
-                                onClick={() => onDelete(record)}
-                                aria-label={`Delete ${record.taskTitle}`}
-                                title="Delete record"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </div>
+                            <button
+                              className="icon-button"
+                              onClick={() => beginEdit(record)}
+                              aria-label={`Edit ${record.taskTitle}`}
+                              title="Edit record"
+                            >
+                              <Edit3 size={15} />
+                            </button>
+                            <button
+                              className="icon-button danger-icon"
+                              onClick={() => onDelete(record)}
+                              aria-label={`Delete ${record.taskTitle}`}
+                              title="Delete record"
+                            >
+                              <Trash2 size={15} />
+                            </button>
                           </div>
-                          <RecordDetails record={record} />
                         </div>
-                      ))}
+                        <RecordDetails record={record} />
+                      </div>
+                    ))}
                   </div>
                 </article>
               ))
