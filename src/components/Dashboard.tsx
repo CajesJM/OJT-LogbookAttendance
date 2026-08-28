@@ -50,6 +50,20 @@ export function Dashboard({
     requiredHours > 0
       ? Math.min(100, Math.round((totalHours / requiredHours) * 100))
       : 0;
+  const progressState = progress >= 100
+    ? "completed"
+    : progress >= 75
+      ? "almost-there"
+      : progress >= 25
+        ? "in-progress"
+        : "getting-started";
+  const progressStatus = progress >= 100
+    ? "Completed"
+    : progress >= 75
+      ? "Almost there"
+      : progress >= 25
+        ? "In progress"
+        : "Getting started";
   const remaining = Math.max(0, requiredHours - totalHours);
   const recentRecords = [...records]
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -158,28 +172,48 @@ export function Dashboard({
 
   return (
     <main className="page-content dashboard-page">
-      <section className="dashboard-intro">
-        <div>
-          <p className="eyebrow">
-            {now.toLocaleDateString("en-PH", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-          <h2 className="typing-greeting" aria-label={greeting}>
-            <span className="typing-text" aria-hidden="true">{typedGreeting}</span>
-            <i className="typing-cursor" aria-hidden="true" />
-          </h2>
-          <p>Keep your training record current and ready to submit.</p>
-        </div>
-        <button
-          className="dashboard-menu"
-          onClick={onOpenRecords}
-          aria-label="Add daily record"
-        >
-          <ArrowRight size={22} />
-        </button>
+      <section className="dashboard-overview" aria-label="OJT overview">
+        <section className="dashboard-intro">
+          <div>
+            <p className="eyebrow">
+              {now.toLocaleDateString("en-PH", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+            <h2 className="typing-greeting" aria-label={greeting}>
+              <span className="typing-text" aria-hidden="true">{typedGreeting}</span>
+              <i className="typing-cursor" aria-hidden="true" />
+            </h2>
+            <p>Keep your training record current and ready to submit.</p>
+          </div>
+          <button
+            className="dashboard-menu"
+            onClick={onOpenRecords}
+            aria-label="Add daily record"
+          >
+            <ArrowRight size={22} />
+          </button>
+        </section>
+
+        <section className="stat-grid" aria-label="OJT summary">
+          <article>
+            <CalendarCheck2 size={22} aria-hidden="true" />
+            <span>Total records</span>
+            <strong>{records.length}</strong>
+          </article>
+          <article>
+            <Target size={22} aria-hidden="true" />
+            <span>Required hours</span>
+            <strong>{formatHours(requiredHours)}</strong>
+          </article>
+          <article>
+            <Clock3 size={22} aria-hidden="true" />
+            <span>Hours remaining</span>
+            <strong>{formatHours(remaining)}</strong>
+          </article>
+        </section>
       </section>
 
       {showBackupReminder && (
@@ -220,14 +254,8 @@ export function Dashboard({
               {formatHours(totalHours)} of {formatHours(requiredHours)}
             </h2>
           </div>
-          <span className="progress-status">
-            {progress >= 100
-              ? "Completed"
-              : progress >= 75
-                ? "Almost there"
-                : progress >= 25
-                  ? "In progress"
-                  : "Getting started"}
+          <span className="progress-status" data-state={progressState}>
+            {progressStatus}
           </span>
         </div>
         <div
@@ -259,24 +287,6 @@ export function Dashboard({
             <p>{estimateContent.detail}</p>
           </div>
         </div>
-      </section>
-
-      <section className="stat-grid" aria-label="OJT summary">
-        <article>
-          <CalendarCheck2 size={22} />
-          <span>Total records</span>
-          <strong>{records.length}</strong>
-        </article>
-        <article>
-          <Target size={22} />
-          <span>Required hours</span>
-          <strong>{formatHours(requiredHours)}</strong>
-        </article>
-        <article>
-          <Clock3 size={22} />
-          <span>Hours remaining</span>
-          <strong>{formatHours(remaining)}</strong>
-        </article>
       </section>
 
       <section className="surface recent-section">

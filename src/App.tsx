@@ -71,6 +71,7 @@ function App() {
   const [profile, setProfile] = useState<StudentProfile>(emptyProfile);
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [recordToEdit, setRecordToEdit] = useState<DailyRecord | null>(null);
+  const [openNewRecord, setOpenNewRecord] = useState(false);
   const [profileImage, setProfileImage] = useState<Blob | null>(null);
   const [pendingProfileImage, setPendingProfileImage] = useState<File | null>(
     null,
@@ -255,6 +256,7 @@ function App() {
     [showToast],
   );
   const clearRecordToEdit = useCallback(() => setRecordToEdit(null), []);
+  const clearNewRecordRequest = useCallback(() => setOpenNewRecord(false), []);
 
   async function saveRecord(
     record: DailyRecord,
@@ -546,6 +548,12 @@ function App() {
     navigateTo("records");
   }
 
+  function addDailyRecord() {
+    setRecordToEdit(null);
+    setOpenNewRecord(true);
+    navigateTo("records");
+  }
+
   if (loading) {
     return (
       <main className="loading-screen">
@@ -631,7 +639,9 @@ function App() {
                   <DailyRecords
                     records={records}
                     initialRecord={recordToEdit}
+                    openNewRecord={openNewRecord}
                     onInitialRecordHandled={clearRecordToEdit}
+                    onNewRecordHandled={clearNewRecordRequest}
                     onSave={saveRecord}
                     onDelete={deleteRecord}
                     onValidationError={(message) => showToast(message, "error")}
@@ -656,7 +666,11 @@ function App() {
               )}
             </div>
           </div>
-          <AppNavigation activeTab={activeTab} onChange={navigateTo} />
+          <AppNavigation
+            activeTab={activeTab}
+            onChange={navigateTo}
+            onAddRecord={addDailyRecord}
+          />
           {reportAction && (
             <Suspense fallback={null}>
               <ReportOptionsModal

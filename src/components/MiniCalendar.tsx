@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clock, X } from "lucide-react";
+import { X } from "lucide-react";
 import { formatTime12Hour } from "../lib/format";
 import type { DailyRecord } from "../types";
 
@@ -211,12 +211,16 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
             {activeDays} active day{activeDays === 1 ? "" : "s"} ({selectedYear})
           </strong>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <b>
+        <div className="activity-heading-actions">
+          <b className="activity-total-hours">
             {totalHours.toLocaleString("en-PH", { maximumFractionDigits: 1 })} hrs
           </b>
           {availableYears.length >= 1 && (
-            <div className="activity-year-buttons">
+            <div
+              className={`activity-year-buttons${availableYears.length > 2 ? " is-scrollable" : ""}`}
+              tabIndex={availableYears.length > 2 ? 0 : undefined}
+              aria-label={availableYears.length > 2 ? "Scroll through activity years" : "Activity years"}
+            >
               {availableYears.map((yr) => (
                 <button
                   key={yr}
@@ -317,9 +321,10 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
             </div>
             <button
               type="button"
-              className="icon-button modal-close"
+              className="icon-button activity-day-close"
               onClick={() => setSelectedDateKey(null)}
               aria-label="Close activity details"
+              title="Close activity details"
             >
               <X size={16} />
             </button>
@@ -331,7 +336,6 @@ export function MiniCalendar({ records, ojtStartDate }: Props) {
                 <div key={rec.id} className="activity-day-record-card">
                   <p className="activity-day-record-title">{rec.taskTitle || "OJT Daily Record"}</p>
                   <p className="activity-day-time">
-                    <Clock size={12} aria-hidden="true" />
                     <span>{formatTime12Hour(rec.timeIn)} – {formatTime12Hour(rec.timeOut)}</span>
                     <strong>({rec.totalHours} hrs)</strong>
                   </p>

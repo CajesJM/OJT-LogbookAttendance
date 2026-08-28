@@ -5,7 +5,6 @@ import {
   ChevronRight,
   Edit3,
   FilePlus2,
-  Plus,
   Search,
   Trash2,
   X,
@@ -24,7 +23,9 @@ import { SignaturePad } from "./SignaturePad";
 type Props = {
   records: DailyRecord[];
   initialRecord: DailyRecord | null;
+  openNewRecord: boolean;
   onInitialRecordHandled: () => void;
+  onNewRecordHandled: () => void;
   onSave: (record: DailyRecord, editingId: string | null) => Promise<boolean>;
   onDelete: (record: DailyRecord) => Promise<void>;
   onValidationError: (message: string) => void;
@@ -49,7 +50,9 @@ function normalizeRecord(record: DailyRecord): DailyRecord {
 export function DailyRecords({
   records,
   initialRecord,
+  openNewRecord,
   onInitialRecordHandled,
+  onNewRecordHandled,
   onSave,
   onDelete,
   onValidationError,
@@ -80,6 +83,16 @@ export function DailyRecords({
     setIsAddingRecord(false);
     onInitialRecordHandled();
   }, [initialRecord, onInitialRecordHandled]);
+
+  useEffect(() => {
+    if (!openNewRecord) return;
+    scrollPositionRef.current = window.scrollY;
+    setIsClosingModal(false);
+    setDraft(createEmptyRecord());
+    setEditingId(null);
+    setIsAddingRecord(true);
+    onNewRecordHandled();
+  }, [openNewRecord, onNewRecordHandled]);
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -409,20 +422,6 @@ export function DailyRecords({
                   <span className="count-badge">{records.length}</span>
                 </h2>
               </div>
-              <button
-                className="mobile-add-record-button button primary icon-only"
-                type="button"
-                onClick={() => {
-                  setIsClosingModal(false);
-                  setDraft(createEmptyRecord());
-                  setEditingId(null);
-                  setIsAddingRecord(true);
-                }}
-                aria-label="Add new record"
-                title="Add new record"
-              >
-                <Plus size={20} />
-              </button>
             </div>
             <div className="records-filter-bar">
               {monthOptions.length > 1 && (
