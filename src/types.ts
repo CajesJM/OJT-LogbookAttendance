@@ -1,5 +1,5 @@
 export type Tab = "dashboard" | "records" | "profile";
-export type ReportTemplate = "detailed" | "worklog";
+export type ReportTemplate = "detailed" | "worklog" | "tmc";
 
 export type UserAccount = {
   id: string;

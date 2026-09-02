@@ -4,6 +4,7 @@ import {
   Download,
   FileText,
   Files,
+  GraduationCap,
   Printer,
   Rows3,
   X,
@@ -47,6 +48,13 @@ export function ReportOptionsModal({
 
   if (!action) return null;
   const ActionIcon = action === "print" ? Printer : Download;
+  const chooseTemplate = (value: ReportTemplate) => {
+    onTemplateChange(value);
+    if (value === "tmc") {
+      onSeparateByMonthChange(true);
+      onFormatChange("pdf");
+    }
+  };
 
   return (
     <div
@@ -74,7 +82,7 @@ export function ReportOptionsModal({
         </button>
         <h2 id="report-options-title">Choose report format</h2>
         <p>
-          Select a paper preview, then choose how the pages should be arranged.
+          Select the report that matches how you need to submit your records.
         </p>
         <div
           className="report-template-options"
@@ -86,7 +94,7 @@ export function ReportOptionsModal({
               type="radio"
               name="report-template"
               checked={template === "detailed"}
-              onChange={() => onTemplateChange("detailed")}
+              onChange={() => chooseTemplate("detailed")}
             />
             <span
               className="report-paper-preview detailed-preview"
@@ -112,7 +120,7 @@ export function ReportOptionsModal({
               type="radio"
               name="report-template"
               checked={template === "worklog"}
-              onChange={() => onTemplateChange("worklog")}
+              onChange={() => chooseTemplate("worklog")}
             />
             <span
               className="report-paper-preview worklog-preview"
@@ -133,75 +141,114 @@ export function ReportOptionsModal({
               </small>
             </span>
           </label>
-        </div>
-        <p className="report-option-label">Page layout</p>
-        <div
-          className="report-layout-options"
-          role="radiogroup"
-          aria-label="Report page layout"
-        >
-          <label className={!separateByMonth ? "selected" : ""}>
+          <label className={template === "tmc" ? "selected" : ""}>
             <input
               type="radio"
-              name="report-layout"
-              checked={!separateByMonth}
-              onChange={() => onSeparateByMonthChange(false)}
+              name="report-template"
+              checked={template === "tmc"}
+              onChange={() => chooseTemplate("tmc")}
             />
-            <Rows3 size={18} aria-hidden="true" />
-            <span>
-              <strong>Continuous report</strong>
-              <small>Use each page fully across all months.</small>
-            </span>
-          </label>
-          <label className={separateByMonth ? "selected" : ""}>
-            <input
-              type="radio"
-              name="report-layout"
-              checked={separateByMonth}
-              onChange={() => onSeparateByMonthChange(true)}
-            />
-            <CalendarRange size={18} aria-hidden="true" />
-            <span>
-              <strong>Separate by month</strong>
-              <small>Start every month on a new page.</small>
-            </span>
-          </label>
-        </div>
-        {action === "download" && (
-          <>
-            <p className="report-option-label">File format</p>
-            <div
-              className="report-format-options"
-              role="radiogroup"
-              aria-label="Download file format"
+            <span
+              className="report-paper-preview tmc-preview"
+              aria-hidden="true"
             >
-              <label className={format === "pdf" ? "selected" : ""}>
+              <i className="preview-tmc-banner" />
+              <i className="preview-tmc-logo" />
+              <i className="preview-tmc-title" />
+              <i className="preview-tmc-meta" />
+              <i className="preview-tmc-table" />
+            </span>
+            <span className="report-template-copy">
+              <strong>TMC daily time record</strong>
+              <small>
+                Official monthly BSIT attendance and accomplishment form.
+              </small>
+            </span>
+          </label>
+        </div>
+        {template === "tmc" ? (
+          <div className="tmc-template-rule" role="note">
+            <GraduationCap size={19} aria-hidden="true" />
+            <span>
+              <strong>Fixed monthly form</strong>
+              <small>
+                One long-bond page is created per month. Record signatures are
+                ignored for this form, and downloads use PDF.
+              </small>
+            </span>
+          </div>
+        ) : (
+          <>
+            <p className="report-option-label">Page layout</p>
+            <div
+              className="report-layout-options"
+              role="radiogroup"
+              aria-label="Report page layout"
+            >
+              <label className={!separateByMonth ? "selected" : ""}>
                 <input
                   type="radio"
-                  name="report-format"
-                  checked={format === "pdf"}
-                  onChange={() => onFormatChange("pdf")}
+                  name="report-layout"
+                  checked={!separateByMonth}
+                  onChange={() => onSeparateByMonthChange(false)}
                 />
-                <Files size={17} aria-hidden="true" />
+                <Rows3 size={18} aria-hidden="true" />
                 <span>
-                  <strong>PDF</strong>
-                  <small>Ready to print</small>
+                  <strong>Continuous report</strong>
+                  <small>Use each page fully across all months.</small>
                 </span>
               </label>
-              <label className={format === "docx" ? "selected" : ""}>
+              <label className={separateByMonth ? "selected" : ""}>
                 <input
                   type="radio"
-                  name="report-format"
-                  checked={format === "docx"}
-                  onChange={() => onFormatChange("docx")}
+                  name="report-layout"
+                  checked={separateByMonth}
+                  onChange={() => onSeparateByMonthChange(true)}
                 />
-                <FileText size={17} aria-hidden="true" />
+                <CalendarRange size={18} aria-hidden="true" />
                 <span>
-                  <strong>DOCX</strong>
-                  <small>Editable in Word</small>
+                  <strong>Separate by month</strong>
+                  <small>Start every month on a new page.</small>
                 </span>
               </label>
             </div>
+            {action === "download" && (
+              <>
+                <p className="report-option-label">File format</p>
+                <div
+                  className="report-format-options"
+                  role="radiogroup"
+                  aria-label="Download file format"
+                >
+                  <label className={format === "pdf" ? "selected" : ""}>
+                    <input
+                      type="radio"
+                      name="report-format"
+                      checked={format === "pdf"}
+                      onChange={() => onFormatChange("pdf")}
+                    />
+                    <Files size={17} aria-hidden="true" />
+                    <span>
+                      <strong>PDF</strong>
+                      <small>Ready to print</small>
+                    </span>
+                  </label>
+                  <label className={format === "docx" ? "selected" : ""}>
+                    <input
+                      type="radio"
+                      name="report-format"
+                      checked={format === "docx"}
+                      onChange={() => onFormatChange("docx")}
+                    />
+                    <FileText size={17} aria-hidden="true" />
+                    <span>
+                      <strong>DOCX</strong>
+                      <small>Editable in Word</small>
+                    </span>
+                  </label>
+                </div>
+              </>
+            )}
           </>
         )}
         <div className="modal-actions">
@@ -212,7 +259,7 @@ export function ReportOptionsModal({
             {action === "print" ? <Printer size={17} /> : <Files size={17} />}
             {action === "print"
               ? "Continue to print"
-              : `Download ${format.toUpperCase()}`}
+              : `Download ${template === "tmc" ? "PDF" : format.toUpperCase()}`}
           </button>
         </div>
       </section>

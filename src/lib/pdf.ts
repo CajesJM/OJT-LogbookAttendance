@@ -1,4 +1,10 @@
 import { formatDate, formatHours, formatTime12Hour } from "./format";
+import {
+  buildTmcMonthGroups,
+  formatTmcHours,
+  getTmcTimeCells,
+} from "./tmcReport";
+import tmcFormTemplateUrl from "../assets/BSIT-TMC-OJT-FORMAT-page-1.png";
 import type {
   DailyRecord,
   ReportTemplate,
@@ -14,6 +20,15 @@ type PdfReportData = {
   template?: ReportTemplate;
 };
 
+function loadImage(source: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("The TMC report template could not be loaded."));
+    image.src = source;
+  });
+}
+
 export async function downloadOjtReportPdf({
   user,
   profile,
@@ -22,7 +37,11 @@ export async function downloadOjtReportPdf({
   template = "detailed",
 }: PdfReportData) {
   const { jsPDF } = await import("jspdf");
-  const document = new jsPDF({ unit: "mm", format: "a4" });
+  const document = new jsPDF({
+    unit: "mm",
+    format: template === "tmc" ? [215.9, 332.04] : "a4",
+    compress: true,
+  });
   const pageWidth = document.internal.pageSize.getWidth();
   const pageHeight = document.internal.pageSize.getHeight();
   const margin = 16;
@@ -40,6 +59,71 @@ export async function downloadOjtReportPdf({
     a.date.localeCompare(b.date),
   );
   let y = margin;
+
+  if (template === "tmc") {
+    const templateImage = await loadImage(tmcFormTemplateUrl);
+    const office = [profile.companyName, profile.department]
+      .filter(Boolean)
+      .join(" - ");
+    const groups = buildTmcMonthGroups(records);
+
+    groups.forEach((group, groupIndex) => {
+      if (groupIndex > 0) document.addPage([215.9, 332.04], "portrait");
+      document.addImage(
+        templateImage,
+        "PNG",
+        0,
+        0,
+        pageWidth,
+        pageHeight,
+        "tmc-official-form",
+        "FAST",
+      );
+      document.setTextColor(0, 0, 0);
+      document.setFont("helvetica", "normal");
+      document.setFontSize(7.2);
+      document.text(profile.fullName || user.name, 51, 62.7, {
+        maxWidth: 63,
+      });
+      document.text(office, 138.5, 62.7, { maxWidth: 63 });
+      document.text(profile.course || "", 51, 69.2, { maxWidth: 63 });
+      document.text(group.label, 138.5, 69.2, { maxWidth: 63 });
+
+      group.days.forEach((day, index) => {
+        const baseline = 89.55 + index * 5.26;
+        document.setFontSize(6.2);
+        [
+          ...getTmcTimeCells(day).map((value, cellIndex) => [
+            value,
+            [36.9, 55.8, 74.7, 93.6][cellIndex],
+          ]),
+          [day.totalHours ? formatTmcHours(day.totalHours) : "", 113],
+        ].forEach(([value, x]) => {
+          if (value)
+            document.text(String(value), Number(x), baseline, {
+              align: "center",
+            });
+        });
+
+        if (day.experience) {
+          document.setFontSize(5.6);
+          const experienceLines = document
+            .splitTextToSize(day.experience, 77)
+            .slice(0, 2);
+          const firstLineY =
+            baseline - (experienceLines.length > 1 ? 1.05 : 0);
+          document.text(experienceLines, 124, firstLineY, {
+            lineHeightFactor: 0.9,
+          });
+        }
+      });
+    });
+
+    document.save(
+      `tmc-daily-time-record-${new Date().toISOString().slice(0, 10)}.pdf`,
+    );
+    return;
+  }
 
   if (template === "worklog") {
     const innerWidth = pageWidth - margin * 2;

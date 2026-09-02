@@ -172,6 +172,9 @@ export async function downloadOjtReportDocx({
   separateByMonth = false,
   template = "detailed",
 }: DocxReportData) {
+  if (template === "tmc")
+    throw new Error("The fixed TMC form is available as PDF or print only.");
+
   const requiredHours = Number(profile.requiredHours) || 0;
   const totalHours = records.reduce(
     (sum, record) => sum + record.totalHours,

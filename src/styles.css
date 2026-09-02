@@ -2536,13 +2536,13 @@ label {
   margin-top: 18px;
 }
 .report-options-modal {
-  width: min(620px, 100%);
+  width: min(780px, 100%);
   max-height: calc(100vh - 28px);
   overflow-y: auto;
 }
 .report-template-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 18px;
 }
@@ -2646,6 +2646,46 @@ label {
 .worklog-preview .preview-table-row {
   border-top: 0;
 }
+.tmc-preview .preview-tmc-banner {
+  position: relative;
+  width: 100%;
+  height: 13px;
+  margin-bottom: 7px;
+  background: #104f76;
+}
+.tmc-preview .preview-tmc-logo {
+  position: absolute;
+  top: 6px;
+  right: 5px;
+  width: 19px;
+  height: 19px;
+  border: 2px solid #d7a524;
+  border-radius: 50%;
+  background: #ffffff;
+}
+.tmc-preview .preview-tmc-title {
+  width: 42px;
+  height: 4px;
+  margin: 0 auto 6px;
+  background: #1f2925;
+}
+.tmc-preview .preview-tmc-meta {
+  width: 100%;
+  height: 13px;
+  margin-bottom: 5px;
+  border: 1px solid #87918c;
+  background:
+    linear-gradient(to right, transparent 52%, #87918c 52%, #87918c 53%, transparent 53%),
+    linear-gradient(to bottom, transparent 48%, #87918c 48%, #87918c 54%, transparent 54%);
+}
+.tmc-preview .preview-tmc-table {
+  width: 100%;
+  height: 55px;
+  border: 1px solid #68736e;
+  background:
+    repeating-linear-gradient(to bottom, #b5b9b7 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(to right, transparent 0 12px, #8d9692 12px 13px);
+}
 .report-template-copy strong,
 .report-template-copy small {
   display: block;
@@ -2744,6 +2784,34 @@ label {
   color: var(--muted);
   font-size: 0.62rem;
 }
+.tmc-template-rule {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  margin-top: 17px;
+  padding: 12px;
+  border: 1px solid #cddfd7;
+  border-radius: 7px;
+  background: #f2f8f5;
+  color: var(--primary-strong);
+}
+.tmc-template-rule svg {
+  color: var(--primary);
+}
+.tmc-template-rule strong,
+.tmc-template-rule small {
+  display: block;
+}
+.tmc-template-rule strong {
+  font-size: 0.76rem;
+}
+.tmc-template-rule small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
 .print-report {
   display: none;
 }
@@ -2779,6 +2847,9 @@ label {
 }
 
 @media (max-width: 700px) {
+  .report-template-options {
+    grid-template-columns: 1fr;
+  }
   .button,
   .icon-button {
     min-height: 44px;
@@ -3349,6 +3420,10 @@ label {
   @page {
     margin: 16mm;
   }
+  @page tmc {
+    size: 215.9mm 332.04mm;
+    margin: 0;
+  }
   body {
     background: #fff;
     color: #111;
@@ -3365,6 +3440,81 @@ label {
   .print-report {
     display: block;
     color: #111;
+  }
+  .tmc-report {
+    width: 215.9mm;
+  }
+  .tmc-form-page {
+    position: relative;
+    width: 215.9mm;
+    height: 332.04mm;
+    overflow: hidden;
+    break-after: page;
+    page: tmc;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .tmc-form-page:last-child {
+    break-after: auto;
+  }
+  .tmc-form-template {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .tmc-field {
+    position: absolute;
+    height: 1.9%;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    font-size: 7pt;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .tmc-name-field,
+  .tmc-course-field {
+    left: 23.8%;
+    width: 29.4%;
+  }
+  .tmc-office-field,
+  .tmc-period-field {
+    left: 64%;
+    width: 29.4%;
+  }
+  .tmc-name-field,
+  .tmc-office-field {
+    top: 17.5%;
+  }
+  .tmc-course-field,
+  .tmc-period-field {
+    top: 19.43%;
+  }
+  .tmc-form-day-row {
+    position: absolute;
+    left: 12.7%;
+    width: 81.5%;
+    height: 1.584%;
+    display: grid;
+    grid-template-columns: 10.8% 10.7% 10.8% 10.7% 11.4% 45.6%;
+    align-items: center;
+    overflow: hidden;
+    font-size: 6.2pt;
+    line-height: 1;
+  }
+  .tmc-form-day-row > span {
+    min-width: 0;
+    overflow: hidden;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .tmc-form-day-row .tmc-experience-cell {
+    padding: 0 1.2mm;
+    text-align: left;
+    text-overflow: ellipsis;
+    font-size: 5.8pt;
   }
   .print-report h1 {
     margin: 0 0 10px;

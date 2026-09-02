@@ -1,4 +1,10 @@
 import { formatDate, formatHours, formatTime12Hour } from "../lib/format";
+import {
+  buildTmcMonthGroups,
+  formatTmcHours,
+  getTmcTimeCells,
+} from "../lib/tmcReport";
+import tmcFormTemplateUrl from "../assets/BSIT-TMC-OJT-FORMAT-page-1.png";
 import type {
   DailyRecord,
   ReportTemplate,
@@ -61,6 +67,49 @@ export function PrintReport({
 
   if (!reportGroups.length)
     reportGroups.push({ key: "all", label: null, entries: [] });
+
+  if (template === "tmc") {
+    const office = [profile.companyName, profile.department]
+      .filter(Boolean)
+      .join(" - ");
+    return (
+      <section className="print-report tmc-report">
+        {buildTmcMonthGroups(records).map((group) => (
+          <section
+            className="tmc-form-page"
+            key={group.key}
+          >
+            <img
+              className="tmc-form-template"
+              src={tmcFormTemplateUrl}
+              alt=""
+            />
+            <span className="tmc-field tmc-name-field">
+              {profile.fullName || user.name}
+            </span>
+            <span className="tmc-field tmc-office-field">{office}</span>
+            <span className="tmc-field tmc-course-field">
+              {profile.course}
+            </span>
+            <span className="tmc-field tmc-period-field">{group.label}</span>
+            {group.days.map((day, index) => (
+              <div
+                className="tmc-form-day-row"
+                style={{ top: `${26.15 + index * 1.584}%` }}
+                key={day.day}
+              >
+                {getTmcTimeCells(day).map((value, cellIndex) => (
+                  <span key={cellIndex}>{value}</span>
+                ))}
+                <span>{day.totalHours ? formatTmcHours(day.totalHours) : ""}</span>
+                <span className="tmc-experience-cell">{day.experience}</span>
+              </div>
+            ))}
+          </section>
+        ))}
+      </section>
+    );
+  }
 
   if (template === "worklog") {
     return (
