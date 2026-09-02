@@ -1,5 +1,6 @@
 export type Tab = "dashboard" | "records" | "profile";
 export type ReportTemplate = "detailed" | "worklog" | "tmc";
+export type PaperSizeId = "a4" | "letter" | "long" | "legal";
 
 export type UserAccount = {
   id: string;

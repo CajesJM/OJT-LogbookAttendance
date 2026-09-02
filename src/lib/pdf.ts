@@ -10,8 +10,10 @@ import {
   getTmcTimeCells,
 } from "./tmcReport";
 import tmcFormTemplateUrl from "../assets/BSIT-TMC-OJT-FORMAT-page-1.png";
+import { getPaperSize } from "./paperSizes";
 import type {
   DailyRecord,
+  PaperSizeId,
   ReportTemplate,
   StudentProfile,
   UserAccount,
@@ -23,6 +25,7 @@ type PdfReportData = {
   records: DailyRecord[];
   separateByMonth?: boolean;
   template?: ReportTemplate;
+  paperSize?: PaperSizeId;
 };
 
 function loadImage(source: string) {
@@ -40,11 +43,14 @@ export async function downloadOjtReportPdf({
   records,
   separateByMonth = false,
   template = "detailed",
+  paperSize = "a4",
 }: PdfReportData) {
   const { jsPDF } = await import("jspdf");
+  const selectedPaper = getPaperSize(paperSize);
   const document = new jsPDF({
     unit: "mm",
-    format: template === "tmc" ? [215.9, 332.04] : "a4",
+    format: [selectedPaper.widthMm, selectedPaper.heightMm],
+    orientation: "portrait",
     compress: true,
   });
   const pageWidth = document.internal.pageSize.getWidth();
@@ -66,6 +72,15 @@ export async function downloadOjtReportPdf({
   let y = margin;
 
   if (template === "tmc") {
+    const sourceWidth = 215.9;
+    const sourceHeight = 332.04;
+    const scale = Math.min(pageWidth / sourceWidth, pageHeight / sourceHeight);
+    const formWidth = sourceWidth * scale;
+    const formHeight = sourceHeight * scale;
+    const offsetX = (pageWidth - formWidth) / 2;
+    const offsetY = (pageHeight - formHeight) / 2;
+    const formX = (position: number) => offsetX + position * scale;
+    const formY = (position: number) => offsetY + position * scale;
     const templateImage = await loadImage(tmcFormTemplateUrl);
     const office = [profile.companyName, profile.department]
       .filter(Boolean)
@@ -73,35 +88,43 @@ export async function downloadOjtReportPdf({
     const groups = buildTmcMonthGroups(records);
 
     groups.forEach((group, groupIndex) => {
-      if (groupIndex > 0) document.addPage([215.9, 332.04], "portrait");
+      if (groupIndex > 0)
+        document.addPage(
+          [selectedPaper.widthMm, selectedPaper.heightMm],
+          "portrait",
+        );
       document.addImage(
         templateImage,
         "PNG",
-        0,
-        0,
-        pageWidth,
-        pageHeight,
+        offsetX,
+        offsetY,
+        formWidth,
+        formHeight,
         "tmc-official-form",
         "FAST",
       );
       document.setTextColor(0, 0, 0);
       document.setFont("helvetica", "normal");
-      document.setFontSize(7.2);
-      document.text(profile.fullName || user.name, 51, 62.7, {
-        maxWidth: 63,
+      document.setFontSize(7.2 * scale);
+      document.text(profile.fullName || user.name, formX(51), formY(62.7), {
+        maxWidth: 63 * scale,
       });
-      document.text(office, 138.5, 62.7, { maxWidth: 63 });
+      document.text(office, formX(138.5), formY(62.7), {
+        maxWidth: 63 * scale,
+      });
       document.text(
         formatCourseBlock(profile.course, profile.block),
-        51,
-        69.2,
-        { maxWidth: 63 },
+        formX(51),
+        formY(69.2),
+        { maxWidth: 63 * scale },
       );
-      document.text(group.label, 138.5, 69.2, { maxWidth: 63 });
+      document.text(group.label, formX(138.5), formY(69.2), {
+        maxWidth: 63 * scale,
+      });
 
       group.days.forEach((day, index) => {
         const baseline = 89.55 + index * 5.26;
-        document.setFontSize(6.2);
+        document.setFontSize(6.2 * scale);
         [
           ...getTmcTimeCells(day).map((value, cellIndex) => [
             value,
@@ -110,19 +133,19 @@ export async function downloadOjtReportPdf({
           [day.totalHours ? formatTmcHours(day.totalHours) : "", 113],
         ].forEach(([value, x]) => {
           if (value)
-            document.text(String(value), Number(x), baseline, {
+            document.text(String(value), formX(Number(x)), formY(baseline), {
               align: "center",
             });
         });
 
         if (day.experience) {
-          document.setFontSize(5.6);
+          document.setFontSize(5.6 * scale);
           const experienceLines = document
-            .splitTextToSize(day.experience, 77)
+            .splitTextToSize(day.experience, 77 * scale)
             .slice(0, 2);
           const firstLineY =
             baseline - (experienceLines.length > 1 ? 1.05 : 0);
-          document.text(experienceLines, 124, firstLineY, {
+          document.text(experienceLines, formX(124), formY(firstLineY), {
             lineHeightFactor: 0.9,
           });
         }

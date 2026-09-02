@@ -9,7 +9,8 @@ import {
   Rows3,
   X,
 } from "lucide-react";
-import type { ReportTemplate } from "../../types";
+import { PAPER_SIZES } from "../../lib/paperSizes";
+import type { PaperSizeId, ReportTemplate } from "../../types";
 
 export type ReportAction = "print" | "download";
 export type ReportFormat = "pdf" | "docx";
@@ -19,9 +20,11 @@ type Props = {
   separateByMonth: boolean;
   format: ReportFormat;
   template: ReportTemplate;
+  paperSize: PaperSizeId;
   onSeparateByMonthChange: (value: boolean) => void;
   onFormatChange: (value: ReportFormat) => void;
   onTemplateChange: (value: ReportTemplate) => void;
+  onPaperSizeChange: (value: PaperSizeId) => void;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -31,9 +34,11 @@ export function ReportOptionsModal({
   separateByMonth,
   format,
   template,
+  paperSize,
   onSeparateByMonthChange,
   onFormatChange,
   onTemplateChange,
+  onPaperSizeChange,
   onCancel,
   onConfirm,
 }: Props) {
@@ -70,6 +75,7 @@ export function ReportOptionsModal({
     onTemplateChange(value);
     if (value === "tmc") {
       onSeparateByMonthChange(true);
+      onPaperSizeChange("long");
     }
   };
 
@@ -236,6 +242,37 @@ export function ReportOptionsModal({
             </span>
           </label>
         </div>
+        <p className="report-option-label">Paper size</p>
+        <div
+          className="paper-size-options"
+          role="radiogroup"
+          aria-label="Report paper size"
+        >
+          {PAPER_SIZES.map((option) => (
+            <label
+              className={paperSize === option.id ? "selected" : ""}
+              key={option.id}
+            >
+              <input
+                type="radio"
+                name="paper-size"
+                checked={paperSize === option.id}
+                onChange={() => onPaperSizeChange(option.id)}
+              />
+              <span
+                className="paper-size-sheet"
+                style={{ aspectRatio: `${option.widthMm} / ${option.heightMm}` }}
+                aria-hidden="true"
+              />
+              <span className="paper-size-copy">
+                <strong>{option.name}</strong>
+                {option.alternateName && <small>{option.alternateName}</small>}
+                <span>{option.dimensions}</span>
+                <small>{option.metricDimensions}</small>
+              </span>
+            </label>
+          ))}
+        </div>
         {action === "download" && (
           <>
             <p className="report-option-label">File format</p>
@@ -322,8 +359,9 @@ export function ReportOptionsModal({
             </button>
             <h2 id="tmc-format-info-title">Fixed monthly form</h2>
             <p>
-              One long-bond page is created per month. Record signatures are
-              ignored for this form, and downloads use PDF or DOCX.
+              The official form defaults to Long Bond and creates one page per
+              month. Other paper sizes fit the form proportionally. Record
+              signatures are ignored, and downloads use PDF or DOCX.
             </p>
             <div className="modal-actions">
               <button

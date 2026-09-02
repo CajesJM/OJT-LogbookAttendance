@@ -76,6 +76,7 @@ import type {
   DailyRecord,
   LoginRateLimit,
   LocalCredentials,
+  PaperSizeId,
   StudentProfile,
   Tab,
   UserAccount,
@@ -120,6 +121,8 @@ function App() {
   const [reportFormat, setReportFormat] = useState<ReportFormat>("pdf");
   const [reportTemplate, setReportTemplate] =
     useState<ReportTemplate>("detailed");
+  const [reportPaperSize, setReportPaperSize] =
+    useState<PaperSizeId>("a4");
   const { toasts, showToast, dismissToast } = useToast();
   const { dialog, confirm, accept, cancel } = useConfirm();
   const profileImageUrl = useObjectUrl(profileImage);
@@ -542,6 +545,7 @@ function App() {
         records,
         separateByMonth,
         template: reportTemplate,
+        paperSize: reportPaperSize,
       });
       showToast("PDF report downloaded.", "success");
     } catch {
@@ -571,6 +575,7 @@ function App() {
         records,
         separateByMonth,
         template: reportTemplate,
+        paperSize: reportPaperSize,
       });
       showToast("Word report downloaded.", "success");
     } catch {
@@ -663,6 +668,7 @@ function App() {
                   records={records}
                   separateByMonth={separateReportMonths}
                   template={reportTemplate}
+                  paperSize={reportPaperSize}
                 />
               </Suspense>
               {activeTab === "dashboard" && (
@@ -734,9 +740,11 @@ function App() {
                 separateByMonth={separateReportMonths}
                 format={reportFormat}
                 template={reportTemplate}
+                paperSize={reportPaperSize}
                 onSeparateByMonthChange={setSeparateReportMonths}
                 onFormatChange={setReportFormat}
                 onTemplateChange={setReportTemplate}
+                onPaperSizeChange={setReportPaperSize}
                 onCancel={() => setReportAction(null)}
                 onConfirm={createReport}
               />

@@ -1,9 +1,11 @@
+import type { CSSProperties } from "react";
 import {
   formatCourseBlock,
   formatDate,
   formatHours,
   formatTime12Hour,
 } from "../lib/format";
+import { getPaperSize } from "../lib/paperSizes";
 import {
   buildTmcMonthGroups,
   formatTmcHours,
@@ -12,6 +14,7 @@ import {
 import tmcFormTemplateUrl from "../assets/BSIT-TMC-OJT-FORMAT-page-1.png";
 import type {
   DailyRecord,
+  PaperSizeId,
   ReportTemplate,
   StudentProfile,
   UserAccount,
@@ -23,13 +26,21 @@ export function PrintReport({
   records,
   separateByMonth,
   template,
+  paperSize,
 }: {
   user: UserAccount;
   profile: StudentProfile;
   records: DailyRecord[];
   separateByMonth: boolean;
   template: ReportTemplate;
+  paperSize: PaperSizeId;
 }) {
+  const selectedPaper = getPaperSize(paperSize);
+  const paperStyle = {
+    "--paper-width": `${selectedPaper.widthMm}mm`,
+    "--paper-height": `${selectedPaper.heightMm}mm`,
+  } as CSSProperties;
+  const printPageStyle = `@media print { @page { size: ${selectedPaper.widthMm}mm ${selectedPaper.heightMm}mm; margin: ${template === "tmc" ? "0" : "16mm"}; } }`;
   const totalHours = records.reduce(
     (sum, record) => sum + record.totalHours,
     0,
@@ -74,42 +85,54 @@ export function PrintReport({
     reportGroups.push({ key: "all", label: null, entries: [] });
 
   if (template === "tmc") {
+    const tmcScale = Math.min(
+      selectedPaper.widthMm / 215.9,
+      selectedPaper.heightMm / 332.04,
+    );
     const office = [profile.companyName, profile.department]
       .filter(Boolean)
       .join(" - ");
     return (
-      <section className="print-report tmc-report">
+      <section className="print-report tmc-report" style={paperStyle}>
+        <style>{printPageStyle}</style>
         {buildTmcMonthGroups(records).map((group) => (
           <section
             className="tmc-form-page"
             key={group.key}
           >
-            <img
-              className="tmc-form-template"
-              src={tmcFormTemplateUrl}
-              alt=""
-            />
-            <span className="tmc-field tmc-name-field">
-              {profile.fullName || user.name}
-            </span>
-            <span className="tmc-field tmc-office-field">{office}</span>
-            <span className="tmc-field tmc-course-field">
-              {formatCourseBlock(profile.course, profile.block)}
-            </span>
-            <span className="tmc-field tmc-period-field">{group.label}</span>
-            {group.days.map((day, index) => (
-              <div
-                className="tmc-form-day-row"
-                style={{ top: `${26.15 + index * 1.584}%` }}
-                key={day.day}
-              >
-                {getTmcTimeCells(day).map((value, cellIndex) => (
-                  <span key={cellIndex}>{value}</span>
-                ))}
-                <span>{day.totalHours ? formatTmcHours(day.totalHours) : ""}</span>
-                <span className="tmc-experience-cell">{day.experience}</span>
-              </div>
-            ))}
+            <div
+              className="tmc-form-content"
+              style={{ "--tmc-scale": tmcScale } as CSSProperties}
+            >
+              <img
+                className="tmc-form-template"
+                src={tmcFormTemplateUrl}
+                alt=""
+              />
+              <span className="tmc-field tmc-name-field">
+                {profile.fullName || user.name}
+              </span>
+              <span className="tmc-field tmc-office-field">{office}</span>
+              <span className="tmc-field tmc-course-field">
+                {formatCourseBlock(profile.course, profile.block)}
+              </span>
+              <span className="tmc-field tmc-period-field">{group.label}</span>
+              {group.days.map((day, index) => (
+                <div
+                  className="tmc-form-day-row"
+                  style={{ top: `${26.15 + index * 1.584}%` }}
+                  key={day.day}
+                >
+                  {getTmcTimeCells(day).map((value, cellIndex) => (
+                    <span key={cellIndex}>{value}</span>
+                  ))}
+                  <span>
+                    {day.totalHours ? formatTmcHours(day.totalHours) : ""}
+                  </span>
+                  <span className="tmc-experience-cell">{day.experience}</span>
+                </div>
+              ))}
+            </div>
           </section>
         ))}
       </section>
@@ -118,7 +141,8 @@ export function PrintReport({
 
   if (template === "worklog") {
     return (
-      <section className="print-report worklog-report">
+      <section className="print-report worklog-report" style={paperStyle}>
+        <style>{printPageStyle}</style>
         {reportGroups.map((group, groupIndex) => (
           <section
             className={`worklog-page ${separateByMonth && groupIndex > 0 ? "print-month-break" : ""}`}
@@ -199,7 +223,8 @@ export function PrintReport({
   }
 
   return (
-    <section className="print-report">
+    <section className="print-report" style={paperStyle}>
+      <style>{printPageStyle}</style>
       <h1>OJT Logbook Report</h1>
       <div className="print-summary">
         <p>

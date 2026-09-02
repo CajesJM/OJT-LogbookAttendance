@@ -10,8 +10,10 @@ import {
   getTmcTimeCells,
 } from "./tmcReport";
 import tmcFormTemplateUrl from "../assets/BSIT-TMC-OJT-FORMAT-page-1.png";
+import { getPaperSize } from "./paperSizes";
 import type {
   DailyRecord,
+  PaperSizeId,
   ReportTemplate,
   StudentProfile,
   UserAccount,
@@ -23,6 +25,7 @@ type DocxReportData = {
   records: DailyRecord[];
   separateByMonth?: boolean;
   template?: ReportTemplate;
+  paperSize?: PaperSizeId;
 };
 
 type ZipEntry = { name: string; data: Uint8Array };
@@ -179,8 +182,13 @@ function signatureDrawing(relationshipId: string, imageId: number) {
   return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="700000" cy="230000"/><wp:docPr id="${imageId}" name="Signature ${imageId}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${imageId}" name="signature-${imageId}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="700000" cy="230000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
 }
 
-function fullPageDrawing(relationshipId: string, imageId: number) {
-  return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="7772400" cy="11925000"/><wp:docPr id="${imageId}" name="TMC form page ${imageId}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${imageId}" name="tmc-page-${imageId}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="7772400" cy="11925000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+function fullPageDrawing(
+  relationshipId: string,
+  imageId: number,
+  widthEmu: number,
+  heightEmu: number,
+) {
+  return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${widthEmu}" cy="${heightEmu}"/><wp:docPr id="${imageId}" name="TMC form page ${imageId}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${imageId}" name="tmc-page-${imageId}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
 }
 
 function dataUrlBytes(dataUrl: string) {
@@ -300,8 +308,26 @@ export async function downloadOjtReportDocx({
   records,
   separateByMonth = false,
   template = "detailed",
+  paperSize = "a4",
 }: DocxReportData) {
+  const selectedPaper = getPaperSize(paperSize);
+  const pageWidthTwips = Math.round((selectedPaper.widthMm / 25.4) * 1440);
+  const pageHeightTwips = Math.round((selectedPaper.heightMm / 25.4) * 1440);
   if (template === "tmc") {
+    const imageScale = Math.min(
+      selectedPaper.widthMm / TMC_PAGE_WIDTH_MM,
+      selectedPaper.heightMm / TMC_PAGE_HEIGHT_MM,
+    );
+    const imageWidthMm = TMC_PAGE_WIDTH_MM * imageScale;
+    const imageHeightMm = TMC_PAGE_HEIGHT_MM * imageScale;
+    const imageWidthEmu = Math.round((imageWidthMm / 25.4) * 914400);
+    const imageHeightEmu = Math.round((imageHeightMm / 25.4) * 914400);
+    const topSpacingTwips = Math.max(
+      0,
+      Math.round(
+        (((selectedPaper.heightMm - imageHeightMm) / 2) / 25.4) * 1440,
+      ),
+    );
     const templateImage = await loadImage(tmcFormTemplateUrl);
     const monthGroups = buildTmcMonthGroups(records);
     const pageImages = await Promise.all(
@@ -320,12 +346,17 @@ export async function downloadOjtReportDocx({
     const pages = pageImages
       .map((_, index) => {
         return paragraph(
-          fullPageDrawing(`rId${index + 1}`, index + 1),
-          `${index > 0 ? "<w:pageBreakBefore/>" : ""}<w:jc w:val="center"/><w:spacing w:before="0" w:after="0" w:line="1" w:lineRule="exact"/>`,
+          fullPageDrawing(
+            `rId${index + 1}`,
+            index + 1,
+            imageWidthEmu,
+            imageHeightEmu,
+          ),
+          `${index > 0 ? "<w:pageBreakBefore/>" : ""}<w:jc w:val="center"/><w:spacing w:before="${topSpacingTwips}" w:after="0"/>`,
         );
       })
       .join("");
-    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${pages}<w:sectPr><w:pgSz w:w="12240" w:h="18824"/><w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${pages}<w:sectPr><w:pgSz w:w="${pageWidthTwips}" w:h="${pageHeightTwips}"/><w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`;
     saveDocx(
       documentXml,
       relationships,
@@ -435,7 +466,7 @@ export async function downloadOjtReportDocx({
         return `${pageBreak}${table(titleRow, [6000, 3800], false)}${table(metaRow, [4900, 4900], false)}${paragraph("", '<w:spacing w:after="60"/>')}${table(header + rows, widths)}`;
       })
       .join("");
-    const worklogDocument = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${worklogGroups}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="907" w:right="907" w:bottom="907" w:left="907"/></w:sectPr></w:body></w:document>`;
+    const worklogDocument = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${worklogGroups}<w:sectPr><w:pgSz w:w="${pageWidthTwips}" w:h="${pageHeightTwips}"/><w:pgMar w:top="907" w:right="907" w:bottom="907" w:left="907"/></w:sectPr></w:body></w:document>`;
     saveDocx(
       worklogDocument,
       worklogRelationships,
@@ -557,7 +588,7 @@ export async function downloadOjtReportDocx({
     })
     .join("");
 
-  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${paragraph(textRun("OJT Logbook Report", true, 32), '<w:spacing w:after="180"/>')}${table(summaryRows, [4300, 4300])}${groupXml}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="907" w:right="907" w:bottom="907" w:left="907"/></w:sectPr></w:body></w:document>`;
+  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${paragraph(textRun("OJT Logbook Report", true, 32), '<w:spacing w:after="180"/>')}${table(summaryRows, [4300, 4300])}${groupXml}<w:sectPr><w:pgSz w:w="${pageWidthTwips}" w:h="${pageHeightTwips}"/><w:pgMar w:top="907" w:right="907" w:bottom="907" w:left="907"/></w:sectPr></w:body></w:document>`;
   saveDocx(
     documentXml,
     relationships,
