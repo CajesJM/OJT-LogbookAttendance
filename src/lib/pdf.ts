@@ -1,4 +1,9 @@
-import { formatDate, formatHours, formatTime12Hour } from "./format";
+import {
+  formatCourseBlock,
+  formatDate,
+  formatHours,
+  formatTime12Hour,
+} from "./format";
 import {
   buildTmcMonthGroups,
   formatTmcHours,
@@ -86,7 +91,12 @@ export async function downloadOjtReportPdf({
         maxWidth: 63,
       });
       document.text(office, 138.5, 62.7, { maxWidth: 63 });
-      document.text(profile.course || "", 51, 69.2, { maxWidth: 63 });
+      document.text(
+        formatCourseBlock(profile.course, profile.block),
+        51,
+        69.2,
+        { maxWidth: 63 },
+      );
       document.text(group.label, 138.5, 69.2, { maxWidth: 63 });
 
       group.days.forEach((day, index) => {
@@ -315,6 +325,7 @@ export async function downloadOjtReportPdf({
     ["Gmail", profile.email || user.email || "Not set"],
     ["School", profile.school || "Not set"],
     ["Course", profile.course || "Not set"],
+    ["Block", profile.block || "Not set"],
     ["Company", profile.companyName || "Not set"],
     ["Department", profile.department || "Not set"],
     ["Supervisor", profile.supervisorName || "Not set"],

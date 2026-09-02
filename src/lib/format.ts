@@ -37,6 +37,10 @@ export function formatDate(value: string): string {
   }).format(new Date(`${value}T00:00:00`));
 }
 
+export function formatCourseBlock(course: string, block: string): string {
+  return [course.trim(), block.trim()].filter(Boolean).join(" / ");
+}
+
 export function formatDayName(value: string): string {
   if (!value) return "";
   return new Intl.DateTimeFormat("en-PH", {

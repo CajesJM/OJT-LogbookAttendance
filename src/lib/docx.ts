@@ -1,4 +1,15 @@
-import { formatDate, formatHours, formatTime12Hour } from "./format";
+import {
+  formatCourseBlock,
+  formatDate,
+  formatHours,
+  formatTime12Hour,
+} from "./format";
+import {
+  buildTmcMonthGroups,
+  formatTmcHours,
+  getTmcTimeCells,
+} from "./tmcReport";
+import tmcFormTemplateUrl from "../assets/BSIT-TMC-OJT-FORMAT-page-1.png";
 import type {
   DailyRecord,
   ReportTemplate,
@@ -17,6 +28,120 @@ type DocxReportData = {
 type ZipEntry = { name: string; data: Uint8Array };
 
 const encoder = new TextEncoder();
+const TMC_PAGE_WIDTH_MM = 215.9;
+const TMC_PAGE_HEIGHT_MM = 332.04;
+
+function loadImage(source: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () =>
+      reject(new Error("The TMC report template could not be loaded."));
+    image.src = source;
+  });
+}
+
+function canvasPngBytes(canvas: HTMLCanvasElement) {
+  return new Promise<Uint8Array>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("The TMC DOCX page could not be created."));
+        return;
+      }
+      blob
+        .arrayBuffer()
+        .then((buffer) => resolve(new Uint8Array(buffer)))
+        .catch(reject);
+    }, "image/png");
+  });
+}
+
+function wrapCanvasText(
+  context: CanvasRenderingContext2D,
+  value: string,
+  maxWidth: number,
+) {
+  const words = value.trim().split(/\s+/);
+  const lines: string[] = [];
+  let line = "";
+  words.forEach((word) => {
+    const next = line ? `${line} ${word}` : word;
+    if (line && context.measureText(next).width > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = next;
+    }
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+async function renderTmcDocxPage(
+  templateImage: HTMLImageElement,
+  group: ReturnType<typeof buildTmcMonthGroups>[number],
+  user: UserAccount,
+  profile: StudentProfile,
+) {
+  const canvas = document.createElement("canvas");
+  canvas.width = templateImage.naturalWidth || 1837;
+  canvas.height = templateImage.naturalHeight || 2824;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas is not available in this browser.");
+
+  context.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
+  const x = (millimeters: number) =>
+    (millimeters / TMC_PAGE_WIDTH_MM) * canvas.width;
+  const y = (millimeters: number) =>
+    (millimeters / TMC_PAGE_HEIGHT_MM) * canvas.height;
+  const point = (size: number) => (size / 72) * (canvas.width / 8.5);
+  const office = [profile.companyName, profile.department]
+    .filter(Boolean)
+    .join(" - ");
+
+  context.fillStyle = "#000";
+  context.textBaseline = "alphabetic";
+  context.textAlign = "left";
+  context.font = `${point(7.2)}px Arial, sans-serif`;
+  context.fillText(profile.fullName || user.name, x(51), y(62.7), x(63));
+  context.fillText(office, x(138.5), y(62.7), x(63));
+  context.fillText(
+    formatCourseBlock(profile.course, profile.block),
+    x(51),
+    y(69.2),
+    x(63),
+  );
+  context.fillText(group.label, x(138.5), y(69.2), x(63));
+
+  group.days.forEach((day, index) => {
+    const baseline = 89.55 + index * 5.26;
+    context.textAlign = "center";
+    context.font = `${point(6.2)}px Arial, sans-serif`;
+    const timeValues = getTmcTimeCells(day);
+    const values: Array<[string, number]> = [
+      ...timeValues.map(
+        (value, cellIndex) =>
+          [value, [36.9, 55.8, 74.7, 93.6][cellIndex]] as [string, number],
+      ),
+      [day.totalHours ? formatTmcHours(day.totalHours) : "", 113],
+    ];
+    values.forEach(([value, position]) => {
+      if (value) context.fillText(value, x(position), y(baseline));
+    });
+
+    if (day.experience) {
+      context.textAlign = "left";
+      context.font = `${point(5.6)}px Arial, sans-serif`;
+      const lines = wrapCanvasText(context, day.experience, x(77)).slice(0, 2);
+      const firstLine = baseline - (lines.length > 1 ? 1.05 : 0);
+      lines.forEach((line, lineIndex) =>
+        context.fillText(line, x(124), y(firstLine + lineIndex * 2.1)),
+      );
+    }
+  });
+
+  return canvasPngBytes(canvas);
+}
 
 function escapeXml(value: unknown) {
   return String(value ?? "")
@@ -52,6 +177,10 @@ function table(rows: string, widths: number[], bordered = true) {
 
 function signatureDrawing(relationshipId: string, imageId: number) {
   return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="700000" cy="230000"/><wp:docPr id="${imageId}" name="Signature ${imageId}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${imageId}" name="signature-${imageId}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="700000" cy="230000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+}
+
+function fullPageDrawing(relationshipId: string, imageId: number) {
+  return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="7772400" cy="11925000"/><wp:docPr id="${imageId}" name="TMC form page ${imageId}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${imageId}" name="tmc-page-${imageId}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="7772400" cy="11925000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
 }
 
 function dataUrlBytes(dataUrl: string) {
@@ -172,8 +301,39 @@ export async function downloadOjtReportDocx({
   separateByMonth = false,
   template = "detailed",
 }: DocxReportData) {
-  if (template === "tmc")
-    throw new Error("The fixed TMC form is available as PDF or print only.");
+  if (template === "tmc") {
+    const templateImage = await loadImage(tmcFormTemplateUrl);
+    const monthGroups = buildTmcMonthGroups(records);
+    const pageImages = await Promise.all(
+      monthGroups.map((group) =>
+        renderTmcDocxPage(templateImage, group, user, profile),
+      ),
+    );
+    const relationships = pageImages.map(
+      (_, index) =>
+        `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/tmc-page-${index + 1}.png"/>`,
+    );
+    const images = pageImages.map((data, index) => ({
+      name: `word/media/tmc-page-${index + 1}.png`,
+      data,
+    }));
+    const pages = pageImages
+      .map((_, index) => {
+        return paragraph(
+          fullPageDrawing(`rId${index + 1}`, index + 1),
+          `${index > 0 ? "<w:pageBreakBefore/>" : ""}<w:jc w:val="center"/><w:spacing w:before="0" w:after="0" w:line="1" w:lineRule="exact"/>`,
+        );
+      })
+      .join("");
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${pages}<w:sectPr><w:pgSz w:w="12240" w:h="18824"/><w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    saveDocx(
+      documentXml,
+      relationships,
+      images,
+      `tmc-daily-time-record-${new Date().toISOString().slice(0, 10)}.docx`,
+    );
+    return;
+  }
 
   const requiredHours = Number(profile.requiredHours) || 0;
   const totalHours = records.reduce(
@@ -311,6 +471,7 @@ export async function downloadOjtReportDocx({
     ["Gmail", profile.email || user.email || "Not set"],
     ["School", profile.school || "Not set"],
     ["Course", profile.course || "Not set"],
+    ["Block", profile.block || "Not set"],
     ["Company", profile.companyName || "Not set"],
     ["Department", profile.department || "Not set"],
     ["Supervisor", profile.supervisorName || "Not set"],

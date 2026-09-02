@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CalendarRange,
   Download,
   FileText,
   Files,
-  GraduationCap,
+  Info,
   Printer,
   Rows3,
   X,
@@ -37,14 +37,32 @@ export function ReportOptionsModal({
   onCancel,
   onConfirm,
 }: Props) {
+  const [showTmcInfo, setShowTmcInfo] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const closeWithAnimation = useCallback(
+    (complete: () => void) => {
+      if (isClosing) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        complete();
+        return;
+      }
+      setIsClosing(true);
+      window.setTimeout(complete, 220);
+    },
+    [isClosing],
+  );
+
   useEffect(() => {
     if (!action) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCancel();
+      if (event.key !== "Escape") return;
+      if (showTmcInfo) setShowTmcInfo(false);
+      else closeWithAnimation(onCancel);
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [action, onCancel]);
+  }, [action, closeWithAnimation, onCancel, showTmcInfo]);
 
   if (!action) return null;
   const ActionIcon = action === "print" ? Printer : Download;
@@ -52,20 +70,19 @@ export function ReportOptionsModal({
     onTemplateChange(value);
     if (value === "tmc") {
       onSeparateByMonthChange(true);
-      onFormatChange("pdf");
     }
   };
 
   return (
     <div
-      className="modal-backdrop"
+      className={`modal-backdrop report-options-backdrop${isClosing ? " is-closing" : ""}`}
       role="presentation"
       onMouseDown={(event) =>
-        event.target === event.currentTarget && onCancel()
+        event.target === event.currentTarget && closeWithAnimation(onCancel)
       }
     >
       <section
-        className="modal report-options-modal"
+        className={`modal report-options-modal${isClosing ? " is-closing" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="report-options-title"
@@ -75,7 +92,8 @@ export function ReportOptionsModal({
         </div>
         <button
           className="icon-button modal-close"
-          onClick={onCancel}
+          onClick={() => closeWithAnimation(onCancel)}
+          disabled={isClosing}
           aria-label="Close report options"
         >
           <X size={18} />
@@ -141,128 +159,184 @@ export function ReportOptionsModal({
               </small>
             </span>
           </label>
-          <label className={template === "tmc" ? "selected" : ""}>
+          <div
+            className={`report-template-with-info${template === "tmc" ? " selected" : ""}`}
+          >
+            <label>
+              <input
+                type="radio"
+                name="report-template"
+                checked={template === "tmc"}
+                onChange={() => chooseTemplate("tmc")}
+              />
+              <span
+                className="report-paper-preview tmc-preview"
+                aria-hidden="true"
+              >
+                <i className="preview-tmc-banner" />
+                <i className="preview-tmc-logo" />
+                <i className="preview-tmc-title" />
+                <i className="preview-tmc-meta" />
+                <i className="preview-tmc-table" />
+              </span>
+              <span className="report-template-copy">
+                <strong>TMC daily time record</strong>
+                <small>
+                  Official monthly BSIT attendance and accomplishment form.
+                </small>
+              </span>
+            </label>
+            <button
+              type="button"
+              className="template-info-button"
+              onClick={() => setShowTmcInfo(true)}
+              aria-label="About the TMC daily time record"
+              title="About this format"
+            >
+              <Info size={15} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <p className="report-option-label">Page layout</p>
+        <div
+          className="report-layout-options"
+          role="radiogroup"
+          aria-label="Report page layout"
+        >
+          <label
+            className={`${!separateByMonth ? "selected" : ""}${template === "tmc" ? " is-disabled" : ""}`}
+          >
             <input
               type="radio"
-              name="report-template"
-              checked={template === "tmc"}
-              onChange={() => chooseTemplate("tmc")}
+              name="report-layout"
+              checked={!separateByMonth}
+              disabled={template === "tmc"}
+              onChange={() => onSeparateByMonthChange(false)}
             />
-            <span
-              className="report-paper-preview tmc-preview"
-              aria-hidden="true"
-            >
-              <i className="preview-tmc-banner" />
-              <i className="preview-tmc-logo" />
-              <i className="preview-tmc-title" />
-              <i className="preview-tmc-meta" />
-              <i className="preview-tmc-table" />
+            <Rows3 size={18} aria-hidden="true" />
+            <span>
+              <strong>Continuous report</strong>
+              <small>Use each page fully across all months.</small>
             </span>
-            <span className="report-template-copy">
-              <strong>TMC daily time record</strong>
-              <small>
-                Official monthly BSIT attendance and accomplishment form.
-              </small>
+          </label>
+          <label
+            className={`${separateByMonth ? "selected" : ""}${template === "tmc" ? " is-fixed" : ""}`}
+          >
+            <input
+              type="radio"
+              name="report-layout"
+              checked={separateByMonth}
+              disabled={template === "tmc"}
+              onChange={() => onSeparateByMonthChange(true)}
+            />
+            <CalendarRange size={18} aria-hidden="true" />
+            <span>
+              <strong>Separate by month</strong>
+              <small>Start every month on a new page.</small>
             </span>
           </label>
         </div>
-        {template === "tmc" ? (
-          <div className="tmc-template-rule" role="note">
-            <GraduationCap size={19} aria-hidden="true" />
-            <span>
-              <strong>Fixed monthly form</strong>
-              <small>
-                One long-bond page is created per month. Record signatures are
-                ignored for this form, and downloads use PDF.
-              </small>
-            </span>
-          </div>
-        ) : (
+        {action === "download" && (
           <>
-            <p className="report-option-label">Page layout</p>
+            <p className="report-option-label">File format</p>
             <div
-              className="report-layout-options"
+              className="report-format-options"
               role="radiogroup"
-              aria-label="Report page layout"
+              aria-label="Download file format"
             >
-              <label className={!separateByMonth ? "selected" : ""}>
+              <label className={format === "pdf" ? "selected" : ""}>
                 <input
                   type="radio"
-                  name="report-layout"
-                  checked={!separateByMonth}
-                  onChange={() => onSeparateByMonthChange(false)}
+                  name="report-format"
+                  checked={format === "pdf"}
+                  onChange={() => onFormatChange("pdf")}
                 />
-                <Rows3 size={18} aria-hidden="true" />
+                <Files size={17} aria-hidden="true" />
                 <span>
-                  <strong>Continuous report</strong>
-                  <small>Use each page fully across all months.</small>
+                  <strong>PDF</strong>
+                  <small>Ready to print</small>
                 </span>
               </label>
-              <label className={separateByMonth ? "selected" : ""}>
+              <label className={format === "docx" ? "selected" : ""}>
                 <input
                   type="radio"
-                  name="report-layout"
-                  checked={separateByMonth}
-                  onChange={() => onSeparateByMonthChange(true)}
+                  name="report-format"
+                  checked={format === "docx"}
+                  onChange={() => onFormatChange("docx")}
                 />
-                <CalendarRange size={18} aria-hidden="true" />
+                <FileText size={17} aria-hidden="true" />
                 <span>
-                  <strong>Separate by month</strong>
-                  <small>Start every month on a new page.</small>
+                  <strong>DOCX</strong>
+                  <small>
+                    {template === "tmc" ? "Opens in Word" : "Editable in Word"}
+                  </small>
                 </span>
               </label>
             </div>
-            {action === "download" && (
-              <>
-                <p className="report-option-label">File format</p>
-                <div
-                  className="report-format-options"
-                  role="radiogroup"
-                  aria-label="Download file format"
-                >
-                  <label className={format === "pdf" ? "selected" : ""}>
-                    <input
-                      type="radio"
-                      name="report-format"
-                      checked={format === "pdf"}
-                      onChange={() => onFormatChange("pdf")}
-                    />
-                    <Files size={17} aria-hidden="true" />
-                    <span>
-                      <strong>PDF</strong>
-                      <small>Ready to print</small>
-                    </span>
-                  </label>
-                  <label className={format === "docx" ? "selected" : ""}>
-                    <input
-                      type="radio"
-                      name="report-format"
-                      checked={format === "docx"}
-                      onChange={() => onFormatChange("docx")}
-                    />
-                    <FileText size={17} aria-hidden="true" />
-                    <span>
-                      <strong>DOCX</strong>
-                      <small>Editable in Word</small>
-                    </span>
-                  </label>
-                </div>
-              </>
-            )}
           </>
         )}
         <div className="modal-actions">
-          <button className="button secondary" onClick={onCancel}>
+          <button
+            className="button secondary"
+            onClick={() => closeWithAnimation(onCancel)}
+            disabled={isClosing}
+          >
             Cancel
           </button>
-          <button className="button primary" onClick={onConfirm}>
+          <button
+            className="button primary"
+            onClick={() => closeWithAnimation(onConfirm)}
+            disabled={isClosing}
+          >
             {action === "print" ? <Printer size={17} /> : <Files size={17} />}
             {action === "print"
               ? "Continue to print"
-              : `Download ${template === "tmc" ? "PDF" : format.toUpperCase()}`}
+              : `Download ${format.toUpperCase()}`}
           </button>
         </div>
       </section>
+      {showTmcInfo && (
+        <div
+          className="report-info-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowTmcInfo(false);
+          }}
+        >
+          <section
+            className="modal report-info-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tmc-format-info-title"
+          >
+            <div className="modal-icon">
+              <Info size={21} aria-hidden="true" />
+            </div>
+            <button
+              type="button"
+              className="icon-button modal-close"
+              onClick={() => setShowTmcInfo(false)}
+              aria-label="Close TMC format information"
+            >
+              <X size={18} />
+            </button>
+            <h2 id="tmc-format-info-title">Fixed monthly form</h2>
+            <p>
+              One long-bond page is created per month. Record signatures are
+              ignored for this form, and downloads use PDF or DOCX.
+            </p>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="button primary"
+                onClick={() => setShowTmcInfo(false)}
+              >
+                Got it
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

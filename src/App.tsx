@@ -553,10 +553,6 @@ function App() {
     const action = reportAction;
     setReportAction(null);
     if (action === "download") {
-      if (reportTemplate === "tmc") {
-        void downloadPdf(true);
-        return;
-      }
       if (reportFormat === "docx") {
         void downloadDocx(separateReportMonths);
       } else {

@@ -2539,6 +2539,18 @@ label {
   width: min(780px, 100%);
   max-height: calc(100vh - 28px);
   overflow-y: auto;
+  transform-origin: top right;
+  animation: modal-zoom-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.report-options-backdrop {
+  animation: modal-backdrop-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.report-options-backdrop.is-closing {
+  animation: modal-backdrop-out 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  pointer-events: none;
+}
+.report-options-modal.is-closing {
+  animation: modal-zoom-out 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
 }
 .report-template-options {
   display: grid;
@@ -2565,6 +2577,68 @@ label {
 .report-template-options > label.selected {
   border-color: var(--primary);
   background: var(--primary-soft);
+}
+.report-template-with-info {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease;
+}
+.report-template-with-info:hover,
+.report-template-with-info.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.report-template-with-info > label {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 11px;
+  cursor: pointer;
+}
+.report-template-with-info input {
+  right: 8px;
+}
+.report-template-with-info .report-template-copy {
+  min-width: 0;
+  padding-right: 30px;
+}
+.template-info-button {
+  position: absolute;
+  z-index: 1;
+  top: 5px;
+  right: 32px;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #c9dfd5;
+  background: #edf6f2;
+  color: var(--primary);
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+.template-info-button:hover {
+  background: #d4e9df;
+  color: var(--primary-strong);
+}
+.template-info-button:active {
+  transform: scale(0.94);
+}
+.template-info-button:focus-visible {
+  outline: 3px solid rgba(23, 107, 85, 0.22);
+  outline-offset: 1px;
 }
 .report-template-options input {
   position: absolute;
@@ -2784,33 +2858,45 @@ label {
   color: var(--muted);
   font-size: 0.62rem;
 }
-.tmc-template-rule {
+.report-layout-options .is-fixed,
+.report-format-options .is-fixed {
+  cursor: default;
+}
+.report-layout-options .is-fixed:hover,
+.report-format-options .is-fixed:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.report-layout-options .is-disabled,
+.report-format-options .is-disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.report-layout-options .is-disabled:hover,
+.report-format-options .is-disabled:hover {
+  border-color: var(--line);
+  background: transparent;
+}
+.is-fixed input:disabled {
+  opacity: 1;
+}
+.report-info-backdrop {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 11px;
-  margin-top: 17px;
-  padding: 12px;
-  border: 1px solid #cddfd7;
-  border-radius: 7px;
-  background: #f2f8f5;
-  color: var(--primary-strong);
+  place-items: center;
+  padding: 16px;
+  background: rgba(20, 31, 27, 0.48);
+  backdrop-filter: blur(2px);
+  animation: modal-backdrop-in 180ms ease both;
 }
-.tmc-template-rule svg {
-  color: var(--primary);
+.report-info-modal {
+  width: min(390px, 100%);
 }
-.tmc-template-rule strong,
-.tmc-template-rule small {
-  display: block;
-}
-.tmc-template-rule strong {
-  font-size: 0.76rem;
-}
-.tmc-template-rule small {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 0.66rem;
-  line-height: 1.4;
+.report-info-modal .modal-actions {
+  grid-template-columns: minmax(100px, auto);
+  justify-content: end;
 }
 .print-report {
   display: none;
@@ -3398,6 +3484,9 @@ label {
     grid-template-columns: 1fr;
   }
   .report-template-options > label {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+  .report-template-with-info > label {
     grid-template-columns: 72px minmax(0, 1fr);
   }
   .report-paper-preview {

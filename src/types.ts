@@ -29,6 +29,7 @@ export type StudentProfile = {
   email: string;
   school: string;
   course: string;
+  block: string;
   companyName: string;
   department: string;
   supervisorName: string;

@@ -197,6 +197,24 @@ export function Profile({
             />
           </label>
           <label>
+            <span>Block</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]{0,3}"
+              maxLength={3}
+              value={profile.block}
+              placeholder="BLOCK :"
+              onChange={(event) =>
+                update(
+                  "block",
+                  event.target.value.replace(/\D/g, "").slice(0, 3),
+                )
+              }
+              readOnly={!isEditing}
+            />
+          </label>
+          <label>
             <span>Company</span>
             <input
               value={profile.companyName}

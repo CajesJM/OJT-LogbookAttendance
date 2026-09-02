@@ -25,6 +25,10 @@ function isProfile(value: unknown): value is StudentProfile {
     && typeof value.email === "string"
     && typeof value.school === "string"
     && typeof value.course === "string"
+    && (value.block === undefined || (
+      typeof value.block === "string"
+      && /^\d{0,3}$/.test(value.block)
+    ))
     && typeof value.companyName === "string"
     && typeof value.department === "string"
     && typeof value.supervisorName === "string"

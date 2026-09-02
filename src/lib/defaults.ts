@@ -6,6 +6,7 @@ export const emptyProfile: StudentProfile = {
   email: "",
   school: "",
   course: "",
+  block: "",
   companyName: "",
   department: "",
   supervisorName: "",
@@ -18,6 +19,9 @@ export function normalizeProfile(profile: StudentProfile): StudentProfile {
   return {
     ...emptyProfile,
     ...profile,
+    block: String(profile.block ?? "")
+      .replace(/\D/g, "")
+      .slice(0, 3),
     dutyDays: normalizeDutyDays(profile.dutyDays),
   };
 }

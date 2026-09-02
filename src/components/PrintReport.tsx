@@ -1,4 +1,9 @@
-import { formatDate, formatHours, formatTime12Hour } from "../lib/format";
+import {
+  formatCourseBlock,
+  formatDate,
+  formatHours,
+  formatTime12Hour,
+} from "../lib/format";
 import {
   buildTmcMonthGroups,
   formatTmcHours,
@@ -89,7 +94,7 @@ export function PrintReport({
             </span>
             <span className="tmc-field tmc-office-field">{office}</span>
             <span className="tmc-field tmc-course-field">
-              {profile.course}
+              {formatCourseBlock(profile.course, profile.block)}
             </span>
             <span className="tmc-field tmc-period-field">{group.label}</span>
             {group.days.map((day, index) => (
@@ -208,6 +213,9 @@ export function PrintReport({
         </p>
         <p>
           <b>Course:</b> {profile.course || "Not set"}
+        </p>
+        <p>
+          <b>Block:</b> {profile.block || "Not set"}
         </p>
         <p>
           <b>Company:</b> {profile.companyName || "Not set"}
