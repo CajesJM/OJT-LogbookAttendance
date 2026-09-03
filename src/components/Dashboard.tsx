@@ -69,7 +69,7 @@ export function Dashboard({
   const remaining = Math.max(0, requiredHours - totalHours);
   const recentRecords = [...records]
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 3);
+    .slice(0, 5);
   const firstName = (profile.fullName || "Trainee").trim().split(" ")[0];
   const greeting = `${greetingForHour(now.getHours())}, ${firstName}.`;
   const completionEstimate = calculateCompletionEstimate(
@@ -335,11 +335,12 @@ export function Dashboard({
               </button>
             </div>
           ) : (
-            recentRecords.map((record) => (
+            recentRecords.map((record, index) => (
               <button
                 key={record.id}
                 type="button"
-                className="record-row record-row-button"
+                className={`record-row record-row-button${index >= 3 ? " recent-record-faded" : ""}`}
+                data-fade-level={index >= 3 ? index - 2 : undefined}
                 onClick={() => onEditRecord(record)}
                 aria-label={`Open ${record.taskTitle} from ${formatDate(record.date)}`}
               >

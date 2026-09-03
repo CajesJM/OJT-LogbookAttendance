@@ -1275,19 +1275,19 @@ button.activity-cell.is-selected {
 }
 .records-animated > .record-card,
 .records-animated > .empty-state {
-  animation: record-result-in 0.3s ease-out both;
+  animation: record-result-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .records-animated > .record-card:nth-child(2) {
-  animation-delay: 0.035s;
+  animation-delay: 0.1s;
 }
 .records-animated > .record-card:nth-child(3) {
-  animation-delay: 0.07s;
+  animation-delay: 0.2s;
 }
 .records-animated > .record-card:nth-child(4) {
-  animation-delay: 0.105s;
+  animation-delay: 0.3s;
 }
 .records-animated > .record-card:nth-child(5) {
-  animation-delay: 0.14s;
+  animation-delay: 0.4s;
 }
 .records-animated.records-exiting > .record-card,
 .records-animated.records-exiting > .empty-state {
@@ -1295,15 +1295,16 @@ button.activity-cell.is-selected {
   animation-name: record-result-out;
   animation-duration: 0.18s;
   animation-timing-function: ease-in;
+  animation-delay: 0s;
 }
 @keyframes record-result-in {
   from {
     opacity: 0;
-    transform: translateY(7px);
+    transform: translateY(9px) scale(0.992);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 @keyframes record-result-out {
@@ -1413,6 +1414,21 @@ button.activity-cell.is-selected {
 }
 .recent-section .record-summary span {
   font-size: 0.7rem;
+}
+.recent-section .recent-record-faded {
+  transition:
+    background 0.16s ease,
+    opacity 0.22s ease;
+}
+.recent-section .recent-record-faded[data-fade-level="1"] {
+  opacity: 0.62;
+}
+.recent-section .recent-record-faded[data-fade-level="2"] {
+  opacity: 0.38;
+}
+.recent-section .recent-record-faded:hover,
+.recent-section .recent-record-faded:focus-visible {
+  opacity: 0.9;
 }
 
 .records-layout {
@@ -1804,8 +1820,11 @@ label {
   padding: 0;
   overflow: hidden;
 }
+.records-animated {
+  gap: 6px;
+}
 .day-group-head {
-  padding: 10px 12px;
+  padding: 7px 9px;
   background: var(--surface-soft);
   border-bottom: 1px solid var(--line);
 }
@@ -1822,7 +1841,7 @@ label {
 }
 .day-group-hours {
   color: var(--primary-strong);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 800;
 }
 .shift-count-badge {
@@ -1835,7 +1854,7 @@ label {
   display: grid;
 }
 .shift-item {
-  padding: 12px;
+  padding: 8px 9px;
 }
 .shift-item + .shift-item {
   border-top: 1px dashed #d5e0db;
@@ -1846,64 +1865,68 @@ label {
   gap: 10px;
 }
 .record-card h3 {
-  margin: 2px 0 3px;
-  font-size: 0.84rem;
-  line-height: 1.3;
+  margin: 0 0 2px;
+  font-size: 0.76rem;
+  line-height: 1.25;
   overflow-wrap: anywhere;
 }
 .record-date {
   margin: 0;
   color: var(--primary);
-  font-size: 0.61rem;
+  font-size: 0.57rem;
   font-weight: 800;
   text-transform: uppercase;
 }
 .record-actions {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   flex: 0 0 auto;
 }
 .record-actions .icon-button {
-  width: 30px;
-  height: 30px;
-  min-height: 30px;
-  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  border-radius: 5px;
+}
+.record-actions .icon-button svg {
+  width: 13px;
+  height: 13px;
 }
 .record-card-head span {
-  font-size: 0.7rem;
+  font-size: 0.63rem;
 }
 .record-details {
   display: grid;
-  gap: 6px;
-  margin-top: 10px;
-  padding-top: 9px;
+  gap: 4px;
+  margin-top: 7px;
+  padding-top: 6px;
   border-top: 1px solid var(--line);
 }
 .record-details p {
   margin: 0;
   display: grid;
-  gap: 3px;
+  gap: 2px;
   color: #596760;
-  font-size: 0.74rem;
-  line-height: 1.4;
+  font-size: 0.68rem;
+  line-height: 1.35;
 }
 .record-details strong {
   color: #3d4e47;
-  font-size: 0.61rem;
+  font-size: 0.56rem;
   text-transform: uppercase;
 }
 .saved-signature {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 .saved-signature > strong {
   color: #3d4e47;
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   text-transform: uppercase;
 }
 .saved-signature img {
   width: min(160px, 100%);
-  height: 50px;
+  height: 38px;
   object-fit: contain;
   object-position: left center;
   border-bottom: 1px solid var(--line);

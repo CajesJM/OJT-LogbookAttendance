@@ -47,6 +47,50 @@ function normalizeRecord(record: DailyRecord): DailyRecord {
   };
 }
 
+function normalizeSearchText(value: unknown) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/[.,/\-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function searchableRecordText(record: DailyRecord) {
+  const date = new Date(`${record.date}T00:00:00`);
+  const hasValidDate = !Number.isNaN(date.getTime());
+  const weekday = hasValidDate
+    ? date.toLocaleDateString("en-US", { weekday: "long" })
+    : "";
+  const month = hasValidDate
+    ? date.toLocaleDateString("en-US", { month: "long" })
+    : "";
+  const shortMonth = hasValidDate
+    ? date.toLocaleDateString("en-US", { month: "short" })
+    : "";
+  const day = hasValidDate ? date.getDate() : "";
+  const year = hasValidDate ? date.getFullYear() : "";
+
+  return normalizeSearchText(
+    [
+      record.date,
+      `${month} ${day}`,
+      `${shortMonth} ${day}`,
+      `${day} ${month}`,
+      `${month} ${day} ${year}`,
+      `${weekday} ${month} ${day} ${year}`,
+      weekday,
+      record.taskTitle,
+      record.activities,
+      record.skillsLearned,
+      record.challenges,
+      record.reflection,
+      formatTime12Hour(record.timeIn),
+      formatTime12Hour(record.timeOut),
+      formatHours(record.totalHours),
+    ].join(" "),
+  );
+}
+
 export function DailyRecords({
   records,
   initialRecord,
@@ -119,24 +163,14 @@ export function DailyRecords({
   }, [records]);
 
   const filteredRecords = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = normalizeSearchText(search);
     return [...records]
       .sort((a, b) => b.date.localeCompare(a.date))
       .filter((record) => {
         if (activeMonth !== "all" && !record.date.startsWith(activeMonth))
           return false;
         if (!query) return true;
-        return [
-          record.date,
-          record.taskTitle,
-          record.activities,
-          record.skillsLearned,
-          record.challenges,
-          record.reflection,
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(query);
+        return searchableRecordText(record).includes(query);
       });
   }, [records, search, activeMonth]);
   const groupedDays = useMemo(() => {
@@ -448,8 +482,8 @@ export function DailyRecords({
                     setSearch(e.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Search records"
-                  aria-label="Search records"
+                  placeholder="Title, weekday, month, or date (July 12)"
+                  aria-label="Search by title, weekday, month, date, details, time, or hours"
                 />
               </div>
             </div>
