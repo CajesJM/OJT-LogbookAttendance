@@ -19,6 +19,7 @@ import {
 } from "../lib/format";
 import type { DailyRecord } from "../types";
 import { SignaturePad } from "./SignaturePad";
+import { TimeInput12Hour } from "./ui/TimeInput12Hour";
 
 type Props = {
   records: DailyRecord[];
@@ -360,24 +361,20 @@ export function DailyRecords({
             required
           />
         </label>
-        <label>
-          <span>Time-in</span>
-          <input
-            type="time"
-            value={draft.timeIn}
-            onChange={(e) => update("timeIn", e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          <span>Time-out</span>
-          <input
-            type="time"
-            value={draft.timeOut}
-            onChange={(e) => update("timeOut", e.target.value)}
-            required
-          />
-        </label>
+        <TimeInput12Hour
+          id="record-time-in"
+          label="Time in"
+          value={draft.timeIn}
+          onChange={(value) => update("timeIn", value)}
+          required
+        />
+        <TimeInput12Hour
+          id="record-time-out"
+          label="Time out"
+          value={draft.timeOut}
+          onChange={(value) => update("timeOut", value)}
+          required
+        />
         <label>
           <span>Total hours</span>
           <input
