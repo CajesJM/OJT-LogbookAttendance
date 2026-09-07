@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Edit3,
@@ -113,11 +114,13 @@ export function DailyRecords({
   const isModalOpen = Boolean(editingId || isAddingRecord);
   const [search, setSearch] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("all");
+  const [isMonthFilterOpen, setIsMonthFilterOpen] = useState(false);
   const [activeMonth, setActiveMonth] = useState("all");
   const [recordsExiting, setRecordsExiting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const scrollPositionRef = useRef(0);
   const monthChangeTimerRef = useRef<number | null>(null);
+  const monthFilterRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!initialRecord) return;
@@ -225,7 +228,29 @@ export function DailyRecords({
     [],
   );
 
+  useEffect(() => {
+    if (!isMonthFilterOpen) return;
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      if (
+        monthFilterRef.current &&
+        !monthFilterRef.current.contains(event.target as Node)
+      ) {
+        setIsMonthFilterOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMonthFilterOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isMonthFilterOpen]);
+
   function changeMonth(nextMonth: string) {
+    setIsMonthFilterOpen(false);
     if (nextMonth === selectedMonth) return;
     setSelectedMonth(nextMonth);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -424,6 +449,15 @@ export function DailyRecords({
       </form>
     </section>
   );
+  const monthFilterLabel =
+    selectedMonth === "all"
+      ? "All months"
+      : monthOptions.find((month) => month.value === selectedMonth)?.label ||
+        "All months";
+  const monthFilterOptions = [
+    { value: "all", label: "All months" },
+    ...monthOptions,
+  ];
 
   return (
     <>
@@ -453,22 +487,41 @@ export function DailyRecords({
             </div>
             <div className="records-filter-bar">
               {monthOptions.length > 1 && (
-                <div className="month-filter">
+                <div className="month-filter" ref={monthFilterRef}>
                   <CalendarDays size={17} aria-hidden="true" />
-                  <select
-                    value={selectedMonth}
-                    onChange={(event) => {
-                      changeMonth(event.target.value);
-                    }}
+                  <button
+                    type="button"
+                    className="month-filter-trigger"
+                    onClick={() => setIsMonthFilterOpen((open) => !open)}
                     aria-label="Filter records by month"
+                    aria-haspopup="listbox"
+                    aria-expanded={isMonthFilterOpen}
                   >
-                    <option value="all">All months</option>
-                    {monthOptions.map((month) => (
-                      <option value={month.value} key={month.value}>
-                        {month.label}
-                      </option>
-                    ))}
-                  </select>
+                    <span>{monthFilterLabel}</span>
+                    <ChevronDown size={15} aria-hidden="true" />
+                  </button>
+                  {isMonthFilterOpen && (
+                    <div
+                      className="month-filter-menu"
+                      role="listbox"
+                      aria-label="Filter records by month"
+                    >
+                      {monthFilterOptions.map((month) => (
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={selectedMonth === month.value}
+                          className={
+                            selectedMonth === month.value ? "selected" : ""
+                          }
+                          onClick={() => changeMonth(month.value)}
+                          key={month.value}
+                        >
+                          {month.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               <div className="search-box">
