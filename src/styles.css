@@ -3880,9 +3880,9 @@ label {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 215.9mm;
-    height: 332.04mm;
-    transform: translate(-50%, -50%) scale(var(--tmc-scale));
+    width: calc(215.9mm * var(--tmc-scale));
+    height: calc(332.04mm * var(--tmc-scale));
+    transform: translate(-50%, -50%);
     transform-origin: center;
   }
   .tmc-form-template {
@@ -3892,13 +3892,24 @@ label {
     height: 100%;
     display: block;
   }
+  .tmc-print-page-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: block;
+    width: auto;
+    height: var(--paper-height);
+    max-width: var(--paper-width);
+    max-height: var(--paper-height);
+    transform: translate(-50%, -50%);
+  }
   .tmc-field {
     position: absolute;
     height: 1.9%;
     display: flex;
     align-items: center;
     overflow: hidden;
-    font-size: 7pt;
+    font-size: calc(7pt * var(--tmc-scale));
     line-height: 1;
     white-space: nowrap;
   }
@@ -3929,7 +3940,7 @@ label {
     grid-template-columns: 10.8% 10.7% 10.8% 10.7% 11.4% 45.6%;
     align-items: center;
     overflow: hidden;
-    font-size: 6.2pt;
+    font-size: calc(6.2pt * var(--tmc-scale));
     line-height: 1;
   }
   .tmc-form-day-row > span {
@@ -3942,7 +3953,7 @@ label {
     padding: 0 1.2mm;
     text-align: left;
     text-overflow: ellipsis;
-    font-size: 5.8pt;
+    font-size: calc(5.8pt * var(--tmc-scale));
   }
   .print-report h1 {
     margin: 0 0 10px;

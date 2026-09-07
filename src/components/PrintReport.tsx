@@ -27,6 +27,7 @@ export function PrintReport({
   separateByMonth,
   template,
   paperSize,
+  tmcPageImages,
 }: {
   user: UserAccount;
   profile: StudentProfile;
@@ -34,6 +35,7 @@ export function PrintReport({
   separateByMonth: boolean;
   template: ReportTemplate;
   paperSize: PaperSizeId;
+  tmcPageImages?: string[];
 }) {
   const selectedPaper = getPaperSize(paperSize);
   const paperStyle = {
@@ -89,52 +91,61 @@ export function PrintReport({
       selectedPaper.widthMm / 215.9,
       selectedPaper.heightMm / 332.04,
     );
-    const office = [profile.companyName, profile.department]
-      .filter(Boolean)
-      .join(" - ");
+    const office = profile.companyName;
     return (
       <section className="print-report tmc-report" style={paperStyle}>
         <style>{printPageStyle}</style>
-        {buildTmcMonthGroups(records).map((group) => (
-          <section
-            className="tmc-form-page"
-            key={group.key}
-          >
-            <div
-              className="tmc-form-content"
-              style={{ "--tmc-scale": tmcScale } as CSSProperties}
-            >
-              <img
-                className="tmc-form-template"
-                src={tmcFormTemplateUrl}
-                alt=""
-              />
-              <span className="tmc-field tmc-name-field">
-                {profile.fullName || user.name}
-              </span>
-              <span className="tmc-field tmc-office-field">{office}</span>
-              <span className="tmc-field tmc-course-field">
-                {formatCourseBlock(profile.course, profile.block)}
-              </span>
-              <span className="tmc-field tmc-period-field">{group.label}</span>
-              {group.days.map((day, index) => (
+        {tmcPageImages?.length
+          ? tmcPageImages.map((source, index) => (
+              <section className="tmc-form-page" key={source}>
+                <img
+                  className="tmc-print-page-image"
+                  src={source}
+                  alt={`TMC daily time record page ${index + 1}`}
+                />
+              </section>
+            ))
+          : buildTmcMonthGroups(records).map((group) => (
+              <section className="tmc-form-page" key={group.key}>
                 <div
-                  className="tmc-form-day-row"
-                  style={{ top: `${26.15 + index * 1.584}%` }}
-                  key={day.day}
+                  className="tmc-form-content"
+                  style={{ "--tmc-scale": tmcScale } as CSSProperties}
                 >
-                  {getTmcTimeCells(day).map((value, cellIndex) => (
-                    <span key={cellIndex}>{value}</span>
-                  ))}
-                  <span>
-                    {day.totalHours ? formatTmcHours(day.totalHours) : ""}
+                  <img
+                    className="tmc-form-template"
+                    src={tmcFormTemplateUrl}
+                    alt=""
+                  />
+                  <span className="tmc-field tmc-name-field">
+                    {profile.fullName || user.name}
                   </span>
-                  <span className="tmc-experience-cell">{day.experience}</span>
+                  <span className="tmc-field tmc-office-field">{office}</span>
+                  <span className="tmc-field tmc-course-field">
+                    {formatCourseBlock(profile.course, profile.block)}
+                  </span>
+                  <span className="tmc-field tmc-period-field">
+                    {group.label}
+                  </span>
+                  {group.days.map((day, index) => (
+                    <div
+                      className="tmc-form-day-row"
+                      style={{ top: `${26.15 + index * 1.584}%` }}
+                      key={day.day}
+                    >
+                      {getTmcTimeCells(day).map((value, cellIndex) => (
+                        <span key={cellIndex}>{value}</span>
+                      ))}
+                      <span>
+                        {day.totalHours ? formatTmcHours(day.totalHours) : ""}
+                      </span>
+                      <span className="tmc-experience-cell">
+                        {day.experience}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
-        ))}
+              </section>
+            ))}
       </section>
     );
   }

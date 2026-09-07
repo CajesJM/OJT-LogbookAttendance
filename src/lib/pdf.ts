@@ -82,9 +82,7 @@ export async function downloadOjtReportPdf({
     const formX = (position: number) => offsetX + position * scale;
     const formY = (position: number) => offsetY + position * scale;
     const templateImage = await loadImage(tmcFormTemplateUrl);
-    const office = [profile.companyName, profile.department]
-      .filter(Boolean)
-      .join(" - ");
+    const office = profile.companyName;
     const groups = buildTmcMonthGroups(records);
 
     groups.forEach((group, groupIndex) => {

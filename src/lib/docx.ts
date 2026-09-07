@@ -98,9 +98,7 @@ async function renderTmcDocxPage(
   const y = (millimeters: number) =>
     (millimeters / TMC_PAGE_HEIGHT_MM) * canvas.height;
   const point = (size: number) => (size / 72) * (canvas.width / 8.5);
-  const office = [profile.companyName, profile.department]
-    .filter(Boolean)
-    .join(" - ");
+  const office = profile.companyName;
 
   context.fillStyle = "#000";
   context.textBaseline = "alphabetic";

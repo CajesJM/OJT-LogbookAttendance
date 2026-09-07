@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { BookOpenCheck, Download, Printer } from "lucide-react";
 import { AppNavigation } from "./components/AppNavigation";
 import { LoginScreen } from "./components/LoginScreen";
@@ -63,6 +64,7 @@ import {
 import { blobToDataUrl, dataUrlToBlob } from "./lib/files";
 import { downloadOjtReportPdf } from "./lib/pdf";
 import { downloadOjtReportDocx } from "./lib/docx";
+import { renderTmcPageImageUrls } from "./lib/tmcPageImages";
 import {
   getStoredValue,
   clearStoredData,
@@ -123,6 +125,7 @@ function App() {
     useState<ReportTemplate>("detailed");
   const [reportPaperSize, setReportPaperSize] =
     useState<PaperSizeId>("a4");
+  const [tmcPrintPageImages, setTmcPrintPageImages] = useState<string[]>([]);
   const { toasts, showToast, dismissToast } = useToast();
   const { dialog, confirm, accept, cancel } = useConfirm();
   const profileImageUrl = useObjectUrl(profileImage);
@@ -553,7 +556,7 @@ function App() {
     }
   }
 
-  function createReport() {
+  async function createReport() {
     const action = reportAction;
     setReportAction(null);
     if (action === "download") {
@@ -564,7 +567,23 @@ function App() {
       }
       return;
     }
-    if (action === "print") window.setTimeout(() => window.print(), 0);
+    if (action === "print") {
+      try {
+        if (reportTemplate === "tmc") {
+          const pageImages = await renderTmcPageImageUrls({
+            user: user!,
+            profile,
+            records,
+          });
+          flushSync(() => setTmcPrintPageImages(pageImages));
+        } else {
+          flushSync(() => setTmcPrintPageImages([]));
+        }
+        window.setTimeout(() => window.print(), 0);
+      } catch {
+        showToast("The print preview could not be prepared.", "error");
+      }
+    }
   }
 
   async function downloadDocx(separateByMonth = separateReportMonths) {
@@ -669,6 +688,7 @@ function App() {
                   separateByMonth={separateReportMonths}
                   template={reportTemplate}
                   paperSize={reportPaperSize}
+                  tmcPageImages={tmcPrintPageImages}
                 />
               </Suspense>
               {activeTab === "dashboard" && (
