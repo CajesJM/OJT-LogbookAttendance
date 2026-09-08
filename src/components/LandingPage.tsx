@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -11,13 +17,18 @@ import {
   FileText,
   Menu,
   NotebookPen,
+  ShieldCheck,
   TrendingUp,
   X,
 } from "lucide-react";
-import phoneUrl from "../assets/Showcase/OJTLogbook.png";
+import phoneUrl from "../assets/Showcase/OJTLogbook.webp";
 import "./landing/landing.css";
 
-type Props = { isLeaving?: boolean; onNavigateToLogin: () => void };
+type Props = {
+  isLeaving?: boolean;
+  isReturning?: boolean;
+  onNavigateToLogin: () => void;
+};
 const links = [
   ["home", "Home"],
   ["features", "Features"],
@@ -55,6 +66,33 @@ const features = [
     icon: DatabaseBackup,
     title: "Your logbook, backed up",
     text: "Export a backup from your profile and import it on another device. Backup reminders help you keep a recent copy.",
+  },
+];
+const heroHighlights = [
+  {
+    icon: CalendarDays,
+    title: "Daily activity records",
+    text: "Log training tasks in seconds.",
+  },
+  {
+    icon: Clock3,
+    title: "Automatic hour totals",
+    text: "Keep rendered hours accurate.",
+  },
+  {
+    icon: FileText,
+    title: "3 report formats",
+    text: "Prepare PDF or Word reports.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Organized and private",
+    text: "Your records stay on your device.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Progress at a glance",
+    text: "See how close you are to completion.",
   },
 ];
 const steps = [
@@ -144,7 +182,11 @@ function ProductTour() {
   );
 }
 
-export function LandingPage({ isLeaving = false, onNavigateToLogin }: Props) {
+export function LandingPage({
+  isLeaving = false,
+  isReturning = false,
+  onNavigateToLogin,
+}: Props) {
   const [menuState, setMenuState] = useState<
     "closed" | "opening" | "open" | "closing"
   >("closed");
@@ -157,7 +199,9 @@ export function LandingPage({ isLeaving = false, onNavigateToLogin }: Props) {
   const processPath = useRef<SVGPathElement>(null);
   const stepNumberRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const menuCloseTimer = useRef<number | null>(null);
-  const [mobileStepCenters, setMobileStepCenters] = useState([30, 145, 260, 375]);
+  const [mobileStepCenters, setMobileStepCenters] = useState([
+    30, 145, 260, 375,
+  ]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -186,7 +230,9 @@ export function LandingPage({ isLeaving = false, onNavigateToLogin }: Props) {
       const sectionTop = scroller.getBoundingClientRect().top + window.scrollY;
       const travelDistance = scroller.offsetHeight - panel.offsetHeight;
       if (travelDistance <= 0) {
-        setTimelineProgress(window.scrollY >= sectionTop - safeStickyTop ? 1 : 0);
+        setTimelineProgress(
+          window.scrollY >= sectionTop - safeStickyTop ? 1 : 0,
+        );
         return;
       }
       const startScroll = sectionTop - safeStickyTop;
@@ -331,12 +377,14 @@ export function LandingPage({ isLeaving = false, onNavigateToLogin }: Props) {
   }
 
   function login() {
-    window.scrollTo({ top: 0, behavior: "instant" });
     onNavigateToLogin();
   }
 
   return (
-    <div className={`lp${isLeaving ? " is-leaving" : ""}`} ref={shell}>
+    <div
+      className={`lp${isLeaving ? " is-leaving" : ""}${isReturning ? " is-returning" : ""}`}
+      ref={shell}
+    >
       <a className="lp-skip" href="#lp-main">
         Skip to content
       </a>
@@ -431,6 +479,14 @@ export function LandingPage({ isLeaving = false, onNavigateToLogin }: Props) {
         >
           <div className="lp-container lp-hero-stage">
             <div className="lp-hero-copy">
+              <div
+                className="lp-hero-kicker"
+                aria-label="For students: a smarter way to track your OJT"
+              >
+                <strong>For students</strong>
+                <ChevronRight size={15} aria-hidden="true" />
+                <span>A smarter way to track your OJT</span>
+              </div>
               <h1 id="lp-title">
                 OJT Logbook<span>Every day counts.</span>
               </h1>
@@ -460,33 +516,55 @@ export function LandingPage({ isLeaving = false, onNavigateToLogin }: Props) {
                   <ArrowDown size={17} />
                 </a>
               </div>
-              <p className="lp-hero-note">
-                <Check size={16} />
-                Made for students. Kept in your browser.
-              </p>
+              <div className="lp-hero-trust" aria-label="OJT Logbook benefits">
+                <span>
+                  <Check size={16} aria-hidden="true" />
+                  Made for students
+                </span>
+                <span>
+                  <Check size={16} aria-hidden="true" />
+                  Works in your browser
+                </span>
+                <span>
+                  <Check size={16} aria-hidden="true" />
+                  Simple and reliable
+                </span>
+              </div>
             </div>
-            <img
-              className="lp-hero-phone"
-              src={phoneUrl}
-              alt="OJT Logbook on a phone, with training hours, an activity calendar and a progress tracker"
-              fetchPriority="high"
-            />
+            <div className="lp-hero-visual">
+              <div className="lp-hero-visual-grid" aria-hidden="true" />
+              <img
+                className="lp-hero-phone"
+                src={phoneUrl}
+                width="1162"
+                height="1515"
+                alt="OJT Logbook dashboard on a phone, showing training hours, activity and progress"
+                fetchPriority="high"
+              />
+              <div className="lp-hero-float" aria-hidden="true">
+                <span>
+                  <TrendingUp size={20} />
+                </span>
+                <p>
+                  <strong>Track progress</strong>Stay on schedule
+                </p>
+              </div>
+            </div>
             <div
               className="lp-hero-metrics"
               aria-label="OJT Logbook highlights"
             >
-              <div>
-                <strong>Daily</strong>
-                <span>activity records</span>
-              </div>
-              <div>
-                <strong>Automatic</strong>
-                <span>hour totals</span>
-              </div>
-              <div>
-                <strong>3 formats</strong>
-                <span>ready to export</span>
-              </div>
+              {heroHighlights.map(({ icon: Icon, title, text }) => (
+                <div className="lp-hero-metric" key={title}>
+                  <span className="lp-hero-metric-icon">
+                    <Icon size={23} aria-hidden="true" />
+                  </span>
+                  <p>
+                    <strong>{title}</strong>
+                    <span>{text}</span>
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </section>

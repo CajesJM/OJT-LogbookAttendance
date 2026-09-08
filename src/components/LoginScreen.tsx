@@ -17,6 +17,7 @@ import { AccountHelpModal } from "./ui/AccountHelpModal";
 import { ClearBrowserDataModal } from "./ui/ClearBrowserDataModal";
 
 type Props = {
+  isLeaving?: boolean;
   onLogin: (username: string, password: string) => Promise<boolean>;
   onError: (message: string) => void;
   hasLocalAccount: boolean;
@@ -26,6 +27,7 @@ type Props = {
 };
 
 export function LoginScreen({
+  isLeaving = false,
   onLogin,
   onError,
   hasLocalAccount,
@@ -78,7 +80,7 @@ export function LoginScreen({
   }
 
   return (
-    <main className="login-shell">
+    <main className={`login-shell${isLeaving ? " is-leaving" : ""}`}>
       <section className="login-panel">
         <div className="login-brand-panel">
           <div className="login-brand-copy">

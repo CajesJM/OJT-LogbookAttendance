@@ -103,7 +103,7 @@ function App() {
       : "right";
   const [user, setUser] = useState<UserAccount | null>(null);
   const [guestView, setGuestView] = useState<
-    "landing" | "landing-exit" | "login"
+    "landing" | "landing-exit" | "landing-return" | "login" | "login-exit"
   >("landing");
   const [profile, setProfile] = useState<StudentProfile>(emptyProfile);
   const [records, setRecords] = useState<DailyRecord[]>([]);
@@ -167,6 +167,7 @@ function App() {
     }
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.scrollTo({ top: 0, behavior: "instant" });
       setGuestView("login");
       return;
     }
@@ -174,7 +175,27 @@ function App() {
     setGuestView("landing-exit");
     guestTransitionTimer.current = window.setTimeout(() => {
       guestTransitionTimer.current = null;
+      window.scrollTo({ top: 0, behavior: "instant" });
       setGuestView("login");
+    }, 360);
+  }, []);
+
+  const showLandingScreen = useCallback(() => {
+    if (guestTransitionTimer.current) {
+      window.clearTimeout(guestTransitionTimer.current);
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      setGuestView("landing");
+      return;
+    }
+
+    setGuestView("login-exit");
+    guestTransitionTimer.current = window.setTimeout(() => {
+      guestTransitionTimer.current = null;
+      window.scrollTo({ top: 0, behavior: "instant" });
+      setGuestView("landing-return");
     }, 360);
   }, []);
 
@@ -661,19 +682,21 @@ function App() {
   return (
     <>
       {!user ? (
-        guestView !== "login" ? (
+        !guestView.startsWith("login") ? (
           <LandingPage
             isLeaving={guestView === "landing-exit"}
+            isReturning={guestView === "landing-return"}
             onNavigateToLogin={showLoginScreen}
           />
         ) : (
           <LoginScreen
+            isLeaving={guestView === "login-exit"}
             onLogin={handleLogin}
             onError={handleLoginError}
             hasLocalAccount={hasLocalAccount}
             lockedUntil={loginRateLimit.lockedUntil}
             onClearData={clearLocalBrowserData}
-            onBackToHome={() => setGuestView("landing")}
+            onBackToHome={showLandingScreen}
           />
         )
       ) : (
