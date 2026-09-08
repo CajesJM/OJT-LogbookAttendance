@@ -7,10 +7,9 @@ import {
   useState,
 } from "react";
 import { flushSync } from "react-dom";
-import { BookOpenCheck, Download, Printer } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 import { AppNavigation } from "./components/AppNavigation";
 import { LandingPage } from "./components/LandingPage";
-import { LoginScreen } from "./components/LoginScreen";
 import { ProfileAvatar } from "./components/ProfileAvatar";
 import { ConfirmModal } from "./components/ui/ConfirmModal";
 import { ToastViewport } from "./components/ui/ToastViewport";
@@ -18,6 +17,11 @@ import { ToastViewport } from "./components/ui/ToastViewport";
 // Lazy load heavy components and modals
 const Dashboard = lazy(() =>
   import("./components/Dashboard").then((m) => ({ default: m.Dashboard })),
+);
+const LoginScreen = lazy(() =>
+  import("./components/LoginScreen").then((m) => ({
+    default: m.LoginScreen,
+  })),
 );
 const DailyRecords = lazy(() =>
   import("./components/DailyRecords").then((m) => ({
@@ -63,11 +67,9 @@ import {
   getBackupReminderStatus,
 } from "./lib/backupReminder";
 import { blobToDataUrl, dataUrlToBlob } from "./lib/files";
-import { downloadOjtReportPdf } from "./lib/pdf";
-import { downloadOjtReportDocx } from "./lib/docx";
-import { renderTmcPageImageUrls } from "./lib/tmcPageImages";
 import {
   getStoredValue,
+  getStoredValues,
   clearStoredData,
   setStoredValue,
   setStoredValues,
@@ -211,24 +213,26 @@ function App() {
           savedCredentials,
           savedLoginRateLimit,
           savedBackupReminder,
-        ] = await Promise.all([
-          getStoredValue<UserAccount | null>(STORAGE_KEYS.user, null),
-          getStoredValue<StudentProfile>(STORAGE_KEYS.profile, emptyProfile),
-          getStoredValue<DailyRecord[]>(STORAGE_KEYS.records, []),
-          getStoredValue<Blob | null>(STORAGE_KEYS.profileImage, null),
-          getStoredValue<LocalCredentials | null>(
+        ] = await getStoredValues(
+          [
+            STORAGE_KEYS.user,
+            STORAGE_KEYS.profile,
+            STORAGE_KEYS.records,
+            STORAGE_KEYS.profileImage,
             STORAGE_KEYS.credentials,
-            null,
-          ),
-          getStoredValue<LoginRateLimit>(
             STORAGE_KEYS.loginRateLimit,
-            EMPTY_LOGIN_RATE_LIMIT,
-          ),
-          getStoredValue<BackupReminderState>(
             STORAGE_KEYS.backupReminder,
-            EMPTY_BACKUP_REMINDER,
-          ),
-        ]);
+          ],
+          [
+            null as UserAccount | null,
+            emptyProfile as StudentProfile,
+            [] as DailyRecord[],
+            null as Blob | null,
+            null as LocalCredentials | null,
+            EMPTY_LOGIN_RATE_LIMIT as LoginRateLimit,
+            EMPTY_BACKUP_REMINDER as BackupReminderState,
+          ] as const,
+        );
 
         setUser(savedUser);
         setProfile(normalizeProfile(savedProfile));
@@ -244,12 +248,7 @@ function App() {
       }
     };
 
-    // Use requestIdleCallback for non-critical loading
-    if ("requestIdleCallback" in window) {
-      requestIdleCallback(() => loadData(), { timeout: 1000 });
-    } else {
-      setTimeout(loadData, 0);
-    }
+    void loadData();
   }, [showToast]);
 
   const handleLogin = useCallback(
@@ -594,6 +593,7 @@ function App() {
 
   async function downloadPdf(separateByMonth = separateReportMonths) {
     try {
+      const { downloadOjtReportPdf } = await import("./lib/pdf");
       await downloadOjtReportPdf({
         user: user!,
         profile,
@@ -622,6 +622,9 @@ function App() {
     if (action === "print") {
       try {
         if (reportTemplate === "tmc") {
+          const { renderTmcPageImageUrls } = await import(
+            "./lib/tmcPageImages"
+          );
           const pageImages = await renderTmcPageImageUrls({
             user: user!,
             profile,
@@ -640,6 +643,7 @@ function App() {
 
   async function downloadDocx(separateByMonth = separateReportMonths) {
     try {
+      const { downloadOjtReportDocx } = await import("./lib/docx");
       await downloadOjtReportDocx({
         user: user!,
         profile,
@@ -670,18 +674,11 @@ function App() {
     navigateTo("records");
   }
 
-  if (loading) {
-    return (
-      <main className="loading-screen">
-        <BookOpenCheck size={34} />
-        <p>Opening your logbook…</p>
-      </main>
-    );
-  }
-
   return (
     <>
-      {!user ? (
+      {loading ? (
+        <LandingPage onNavigateToLogin={showLoginScreen} />
+      ) : !user ? (
         !guestView.startsWith("login") ? (
           <LandingPage
             isLeaving={guestView === "landing-exit"}
@@ -689,15 +686,17 @@ function App() {
             onNavigateToLogin={showLoginScreen}
           />
         ) : (
-          <LoginScreen
-            isLeaving={guestView === "login-exit"}
-            onLogin={handleLogin}
-            onError={handleLoginError}
-            hasLocalAccount={hasLocalAccount}
-            lockedUntil={loginRateLimit.lockedUntil}
-            onClearData={clearLocalBrowserData}
-            onBackToHome={showLandingScreen}
-          />
+          <Suspense fallback={<div className="loading-fallback">Opening sign in...</div>}>
+            <LoginScreen
+              isLeaving={guestView === "login-exit"}
+              onLogin={handleLogin}
+              onError={handleLoginError}
+              hasLocalAccount={hasLocalAccount}
+              lockedUntil={loginRateLimit.lockedUntil}
+              onClearData={clearLocalBrowserData}
+              onBackToHome={showLandingScreen}
+            />
+          </Suspense>
         )
       ) : (
         <div className="app-shell">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Trash2, X } from "lucide-react";
 
 type Props = {
@@ -10,18 +10,26 @@ type Props = {
 export function ClearBrowserDataModal({ open, onClose, onClear }: Props) {
   const [confirmation, setConfirmation] = useState("");
   const [clearing, setClearing] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const closeWithAnimation = useCallback(() => {
+    if (clearing || isClosing) return;
+    setIsClosing(true);
+    window.setTimeout(onClose, 220);
+  }, [clearing, isClosing, onClose]);
 
   useEffect(() => {
     if (!open) {
       setConfirmation("");
+      setIsClosing(false);
       return;
     }
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !clearing) onClose();
+      if (event.key === "Escape") closeWithAnimation();
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [clearing, onClose, open]);
+  }, [closeWithAnimation, open]);
 
   if (!open) return null;
 
@@ -30,19 +38,22 @@ export function ClearBrowserDataModal({ open, onClose, onClear }: Props) {
     setClearing(true);
     const cleared = await onClear();
     setClearing(false);
-    if (cleared) onClose();
+    if (cleared) {
+      setIsClosing(true);
+      window.setTimeout(onClose, 220);
+    }
   }
 
   return (
     <div
-      className="modal-backdrop"
+      className={`modal-backdrop icon-origin-backdrop${isClosing ? " is-closing" : ""}`}
       role="presentation"
       onMouseDown={(event) =>
-        event.target === event.currentTarget && !clearing && onClose()
+        event.target === event.currentTarget && closeWithAnimation()
       }
     >
       <section
-        className="modal clear-data-modal"
+        className={`modal clear-data-modal icon-origin-modal${isClosing ? " is-closing" : ""}`}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="clear-data-title"
@@ -53,7 +64,7 @@ export function ClearBrowserDataModal({ open, onClose, onClear }: Props) {
         </div>
         <button
           className="icon-button modal-close"
-          onClick={onClose}
+          onClick={closeWithAnimation}
           disabled={clearing}
           aria-label="Close delete account dialog"
         >
@@ -88,7 +99,7 @@ export function ClearBrowserDataModal({ open, onClose, onClear }: Props) {
         <div className="modal-actions">
           <button
             className="button secondary"
-            onClick={onClose}
+            onClick={closeWithAnimation}
             disabled={clearing}
           >
             Cancel

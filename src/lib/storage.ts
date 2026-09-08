@@ -41,6 +41,38 @@ export async function getStoredValue<T>(key: string, fallback: T): Promise<T> {
   });
 }
 
+export async function getStoredValues<T extends readonly unknown[]>(
+  keys: readonly string[],
+  fallbacks: T,
+): Promise<T> {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+    const values = [...fallbacks] as unknown[];
+
+    keys.forEach((key, index) => {
+      const request = store.get(key);
+      request.onsuccess = () => {
+        values[index] = request.result ?? fallbacks[index];
+      };
+    });
+
+    transaction.oncomplete = () => {
+      db.close();
+      resolve(values as unknown as T);
+    };
+    transaction.onerror = () => {
+      db.close();
+      reject(transaction.error);
+    };
+    transaction.onabort = () => {
+      db.close();
+      reject(transaction.error || new Error("Storage read aborted"));
+    };
+  });
+}
+
 export async function setStoredValue<T>(key: string, value: T): Promise<void> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {

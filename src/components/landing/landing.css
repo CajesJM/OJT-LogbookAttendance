@@ -37,6 +37,14 @@
 .lp section[id] {
   scroll-margin-top: 100px;
 }
+.lp-features,
+.lp-tour,
+.lp-about,
+.lp-cta,
+.lp-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
+}
 .lp section:focus,
 .lp main:focus {
   outline: none;
@@ -251,7 +259,7 @@
   position: relative;
   z-index: 2;
   width: auto;
-  padding: 28px 0 36px;
+  padding: 28px 0 36px clamp(24px, 3vw, 52px);
 }
 .lp-hero-kicker {
   width: fit-content;
@@ -725,7 +733,7 @@
   border: 1px solid #d8e8f0;
   border-radius: 50%;
   background: white;
-  color: #317ea9;
+  color: #2f769e;
   font-size: 14px;
   font-weight: 750;
   box-shadow: 0 8px 18px #337da91a;

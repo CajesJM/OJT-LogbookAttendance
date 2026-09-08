@@ -1,18 +1,22 @@
 import { FormEvent, useEffect, useState } from "react";
 import {
-  ArrowLeft,
   ArrowRight,
+  CalendarDays,
   Clock3,
   Eye,
   EyeOff,
+  FileText,
   House,
   Info,
   LockKeyhole,
   ShieldCheck,
   Trash2,
+  TrendingUp,
   UserRound,
 } from "lucide-react";
 import logoUrl from "../assets/ojt-logbook-logo.svg";
+import lightLogoUrl from "../assets/ojt-logbook-logo-light.svg";
+import loginVisualUrl from "../assets/Showcase/OJT-Laptop-Hero.webp";
 import { AccountHelpModal } from "./ui/AccountHelpModal";
 import { ClearBrowserDataModal } from "./ui/ClearBrowserDataModal";
 
@@ -81,15 +85,83 @@ export function LoginScreen({
 
   return (
     <main className={`login-shell${isLeaving ? " is-leaving" : ""}`}>
+      <header className="login-page-header">
+        {onBackToHome ? (
+          <button
+            className="login-page-brand"
+            type="button"
+            onClick={onBackToHome}
+            aria-label="Return to the OJT Logbook landing page"
+          >
+            <img src={logoUrl} alt="" aria-hidden="true" />
+          </button>
+        ) : (
+          <img
+            className="login-page-brand-image"
+            src={logoUrl}
+            alt="OJT Logbook"
+          />
+        )}
+      </header>
       <section className="login-panel">
         <div className="login-brand-panel">
+          <img
+            className="login-brand-visual"
+            src={loginVisualUrl}
+            alt=""
+            aria-hidden="true"
+          />
+          <img className="login-brand-logo" src={lightLogoUrl} alt="OJT Logbook" />
+          <header className="login-mobile-card-header">
+            {onBackToHome ? (
+              <button
+                className="login-mobile-brand-button"
+                type="button"
+                onClick={onBackToHome}
+                aria-label="Return to the OJT Logbook landing page"
+              >
+                <img src={lightLogoUrl} alt="" aria-hidden="true" />
+              </button>
+            ) : (
+              <img src={lightLogoUrl} alt="OJT Logbook" />
+            )}
+          </header>
+          <div className="login-mobile-heading">
+            <p>Welcome back</p>
+            <h2>Sign in to your logbook</h2>
+            <span>
+              Continue where you left off or create your local account.
+            </span>
+          </div>
           <div className="login-brand-copy">
             <p className="login-brand-kicker">Your OJT companion</p>
-            <h1>Keep every training day accounted for.</h1>
+            <h1>
+              Keep every training day <span>accounted for.</span>
+            </h1>
             <p>
               Build a clear, reliable record of your attendance and daily
               experience.
             </p>
+          </div>
+          <div className="login-benefits" aria-label="Logbook features">
+            <div>
+              <CalendarDays size={19} aria-hidden="true" />
+              <span>
+                Track<strong>Attendance</strong>
+              </span>
+            </div>
+            <div>
+              <FileText size={19} aria-hidden="true" />
+              <span>
+                Log<strong>Daily activities</strong>
+              </span>
+            </div>
+            <div>
+              <TrendingUp size={19} aria-hidden="true" />
+              <span>
+                Monitor<strong>Your progress</strong>
+              </span>
+            </div>
           </div>
           <div className="login-brand-note">
             <ShieldCheck size={18} aria-hidden="true" />
@@ -130,14 +202,8 @@ export function LoginScreen({
               <Info size={17} />
             </button>
           </div>
-          <img
-            className="login-logo"
-            src={logoUrl}
-            alt="OJT Logbook"
-            loading="eager"
-          />
           <div className="login-heading">
-            <p className="eyebrow">Welcome</p>
+            <p className="eyebrow">Welcome back</p>
             <h2>Sign in to your logbook</h2>
             <p className="muted">
               Continue where you left off or create your local account.
@@ -208,8 +274,25 @@ export function LoginScreen({
             </button>
           </form>
           <p className="login-storage-note">
-            Your records stay in this browser unless you export a backup.
+            <LockKeyhole size={15} aria-hidden="true" />
+            <span>
+              Your records stay in this browser unless you export a backup.
+            </span>
           </p>
+          <div className="login-mobile-benefits" aria-label="Logbook features">
+            <div>
+              <CalendarDays size={18} aria-hidden="true" />
+              <span>Track attendance</span>
+            </div>
+            <div>
+              <FileText size={18} aria-hidden="true" />
+              <span>Log activities</span>
+            </div>
+            <div>
+              <TrendingUp size={18} aria-hidden="true" />
+              <span>View progress</span>
+            </div>
+          </div>
         </div>
       </section>
       <AccountHelpModal

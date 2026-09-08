@@ -122,6 +122,7 @@ function Brand() {
         width="40"
         height="40"
         alt=""
+        decoding="async"
       />
       <span>
         OJT<span className="lp-brand-light">Logbook</span>
@@ -174,6 +175,9 @@ function ProductTour() {
             src={phoneUrl}
             alt="OJT Logbook phone preview showing training statistics, activity calendar and progress"
             loading="lazy"
+            decoding="async"
+            width="1162"
+            height="1515"
           />
           <figcaption>Dashboard / OJT Logbook</figcaption>
         </figure>
@@ -539,6 +543,8 @@ export function LandingPage({
                 width="1162"
                 height="1515"
                 alt="OJT Logbook dashboard on a phone, showing training hours, activity and progress"
+                loading="eager"
+                decoding="async"
                 fetchPriority="high"
               />
               <div className="lp-hero-float" aria-hidden="true">

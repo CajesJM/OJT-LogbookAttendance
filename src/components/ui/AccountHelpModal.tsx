@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Download, Info, KeyRound, Laptop, X } from "lucide-react";
 
 type Props = {
@@ -7,33 +7,44 @@ type Props = {
 };
 
 export function AccountHelpModal({ open, onClose }: Props) {
+  const [isClosing, setIsClosing] = useState(false);
+
+  const closeWithAnimation = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    window.setTimeout(onClose, 220);
+  }, [isClosing, onClose]);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setIsClosing(false);
+      return;
+    }
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") closeWithAnimation();
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [open, onClose]);
+  }, [closeWithAnimation, open]);
 
   if (!open) return null;
 
   return (
     <div
-      className="modal-backdrop account-help-backdrop"
+      className={`modal-backdrop icon-origin-backdrop${isClosing ? " is-closing" : ""}`}
       onMouseDown={(event) => {
-        if (event.currentTarget === event.target) onClose();
+        if (event.currentTarget === event.target) closeWithAnimation();
       }}
     >
       <section
-        className="modal account-help-modal"
+        className={`modal account-help-modal icon-origin-modal${isClosing ? " is-closing" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-help-title"
       >
         <button
           className="icon-button modal-close"
-          onClick={onClose}
+          onClick={closeWithAnimation}
           aria-label="Close account information"
         >
           <X size={17} />
@@ -82,7 +93,7 @@ export function AccountHelpModal({ open, onClose }: Props) {
           </section>
         </div>
         <div className="modal-actions">
-          <button className="button primary" onClick={onClose}>
+          <button className="button primary" onClick={closeWithAnimation}>
             Got it
           </button>
         </div>

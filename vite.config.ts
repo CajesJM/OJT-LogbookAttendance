@@ -20,29 +20,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (id.includes("node_modules")) {
-            if (
-              id.includes("react") ||
-              id.includes("react-dom") ||
-              id.includes("scheduler")
-            ) {
-              return "react-vendor";
-            }
-
-            if (
-              id.includes("jspdf") ||
-              id.includes("html2canvas") ||
-              id.includes("dompurify") ||
-              id.includes("purify")
-            ) {
-              return "pdf-vendor";
-            }
-
-            if (id.includes("lucide-react")) {
-              return "icons-vendor";
-            }
-
-            return "vendor";
+          if (
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/scheduler/")
+          ) {
+            return "react-vendor";
           }
         },
 
