@@ -102,7 +102,9 @@ function App() {
       ? "left"
       : "right";
   const [user, setUser] = useState<UserAccount | null>(null);
-  const [guestView, setGuestView] = useState<"landing" | "login">("landing");
+  const [guestView, setGuestView] = useState<
+    "landing" | "landing-exit" | "login"
+  >("landing");
   const [profile, setProfile] = useState<StudentProfile>(emptyProfile);
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [recordToEdit, setRecordToEdit] = useState<DailyRecord | null>(null);
@@ -128,6 +130,7 @@ function App() {
   const [reportPaperSize, setReportPaperSize] =
     useState<PaperSizeId>("a4");
   const [tmcPrintPageImages, setTmcPrintPageImages] = useState<string[]>([]);
+  const guestTransitionTimer = useRef<number | null>(null);
   const { toasts, showToast, dismissToast } = useToast();
   const { dialog, confirm, accept, cancel } = useConfirm();
   const profileImageUrl = useObjectUrl(profileImage);
@@ -148,6 +151,31 @@ function App() {
       return () => window.clearInterval(interval);
     }, 2000);
     return () => window.clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (guestTransitionTimer.current) {
+        window.clearTimeout(guestTransitionTimer.current);
+      }
+    };
+  }, []);
+
+  const showLoginScreen = useCallback(() => {
+    if (guestTransitionTimer.current) {
+      window.clearTimeout(guestTransitionTimer.current);
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setGuestView("login");
+      return;
+    }
+
+    setGuestView("landing-exit");
+    guestTransitionTimer.current = window.setTimeout(() => {
+      guestTransitionTimer.current = null;
+      setGuestView("login");
+    }, 360);
   }, []);
 
   useEffect(() => {
@@ -633,8 +661,11 @@ function App() {
   return (
     <>
       {!user ? (
-        guestView === "landing" ? (
-          <LandingPage onNavigateToLogin={() => setGuestView("login")} />
+        guestView !== "login" ? (
+          <LandingPage
+            isLeaving={guestView === "landing-exit"}
+            onNavigateToLogin={showLoginScreen}
+          />
         ) : (
           <LoginScreen
             onLogin={handleLogin}

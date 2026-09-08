@@ -1,23 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowDown,
   ArrowRight,
+  ArrowUpRight,
   CalendarDays,
   Check,
+  ChevronRight,
   Clock3,
   DatabaseBackup,
   FileText,
-  LayoutDashboard,
   Menu,
   NotebookPen,
   TrendingUp,
   X,
 } from "lucide-react";
 import phoneUrl from "../assets/Showcase/OJTLogbook.png";
-import reportUrl from "../assets/BSIT-TMC-OJT-FORMAT-page-1.png";
 import "./landing/landing.css";
 
-type Props = { onNavigateToLogin: () => void };
+type Props = { isLeaving?: boolean; onNavigateToLogin: () => void };
 const links = [
   ["home", "Home"],
   ["features", "Features"],
@@ -93,8 +93,6 @@ function Brand() {
 }
 
 function ProductTour() {
-  const [view, setView] = useState("dashboard");
-  const isDashboard = view === "dashboard";
   return (
     <section
       className="lp-tour lp-section"
@@ -113,52 +111,18 @@ function ProductTour() {
           <p>
             One place to see the work you have done and the hours still ahead.
           </p>
-          <div
-            className="lp-view-switch"
-            role="group"
-            aria-label="Product preview"
-          >
-            <button
-              type="button"
-              aria-pressed={isDashboard}
-              onClick={() => setView("dashboard")}
-            >
-              <LayoutDashboard size={17} />
-              Dashboard
-            </button>
-            <button
-              type="button"
-              aria-pressed={!isDashboard}
-              onClick={() => setView("report")}
-            >
-              <FileText size={17} />
-              Report
-            </button>
-          </div>
-          <div className="lp-tour-details" key={view} aria-live="polite">
-            <h3>
-              {isDashboard
-                ? "Your training, in perspective."
-                : "A familiar form. Less paperwork."}
-            </h3>
+          <div className="lp-tour-details">
+            <h3>Your training, in perspective.</h3>
             <p>
-              {isDashboard
-                ? "Check your hours, revisit active days and keep your next milestone in sight."
-                : "The TMC monthly form brings your attendance and accomplishments into a structured report."}
+              Check your hours, revisit active days and keep your next milestone
+              in sight.
             </p>
             <ul>
-              {(isDashboard
-                ? [
-                    "Completed and remaining training hours",
-                    "Interactive OJT activity calendar",
-                    "Recent records and completion estimate",
-                  ]
-                : [
-                    "Monthly attendance and task entries",
-                    "Student and company details from your profile",
-                    "PDF, Word and direct printing",
-                  ]
-              ).map((text) => (
+              {[
+                "Completed and remaining training hours",
+                "Interactive OJT activity calendar",
+                "Recent records and completion estimate",
+              ].map((text) => (
                 <li key={text}>
                   <Check size={16} aria-hidden="true" />
                   {text}
@@ -166,39 +130,34 @@ function ProductTour() {
               ))}
             </ul>
           </div>
-          <p className="lp-caption">
-            Illustrative preview. Your account shows your own records.
-          </p>
         </div>
-        <figure
-          className={`lp-tour-visual ${isDashboard ? "" : "lp-tour-report"}`}
-        >
+        <figure className="lp-tour-visual">
           <img
-            key={view}
-            src={isDashboard ? phoneUrl : reportUrl}
-            alt={
-              isDashboard
-                ? "OJT Logbook phone preview showing training statistics, activity calendar and progress"
-                : "TMC BSIT daily time record and accomplishment report template"
-            }
+            src={phoneUrl}
+            alt="OJT Logbook phone preview showing training statistics, activity calendar and progress"
             loading="lazy"
           />
-          <figcaption>
-            {isDashboard
-              ? "Dashboard / OJT Logbook"
-              : "TMC / Monthly time record"}
-          </figcaption>
+          <figcaption>Dashboard / OJT Logbook</figcaption>
         </figure>
       </div>
     </section>
   );
 }
 
-export function LandingPage({ onNavigateToLogin }: Props) {
-  const [menuOpen, setMenuOpen] = useState(false);
+export function LandingPage({ isLeaving = false, onNavigateToLogin }: Props) {
+  const [menuState, setMenuState] = useState<
+    "closed" | "opening" | "open" | "closing"
+  >("closed");
   const [activeSection, setActiveSection] = useState("home");
+  const [timelineProgress, setTimelineProgress] = useState(0);
   const shell = useRef<HTMLDivElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
+  const processSection = useRef<HTMLDivElement>(null);
+  const processPanel = useRef<HTMLDivElement>(null);
+  const processPath = useRef<SVGPathElement>(null);
+  const stepNumberRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const menuCloseTimer = useRef<number | null>(null);
+  const [mobileStepCenters, setMobileStepCenters] = useState([30, 145, 260, 375]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -216,19 +175,151 @@ export function LandingPage({ onNavigateToLogin }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    let frame = 0;
+    const updateTimeline = () => {
+      frame = 0;
+      const scroller = processSection.current;
+      const panel = processPanel.current;
+      if (!scroller || !panel) return;
+      const stickyTop = Number.parseFloat(window.getComputedStyle(panel).top);
+      const safeStickyTop = Number.isFinite(stickyTop) ? stickyTop : 0;
+      const sectionTop = scroller.getBoundingClientRect().top + window.scrollY;
+      const travelDistance = scroller.offsetHeight - panel.offsetHeight;
+      if (travelDistance <= 0) {
+        setTimelineProgress(window.scrollY >= sectionTop - safeStickyTop ? 1 : 0);
+        return;
+      }
+      const startScroll = sectionTop - safeStickyTop;
+      const endScroll = startScroll + travelDistance;
+      if (window.scrollY >= endScroll) {
+        setTimelineProgress(1);
+        return;
+      }
+      if (window.scrollY <= startScroll) {
+        setTimelineProgress(0);
+        return;
+      }
+      const travelled = window.scrollY - startScroll;
+      const progress = Math.min(1, Math.max(0, travelled / travelDistance));
+      setTimelineProgress(progress);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateTimeline);
+    };
+    updateTimeline();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const updateMobileStepCenters = () => {
+      const panel = processPanel.current;
+      if (!panel) return;
+      const panelTop = panel.getBoundingClientRect().top;
+      const centers = stepNumberRefs.current
+        .map((step) => {
+          if (!step) return null;
+          const rect = step.getBoundingClientRect();
+          return rect.top - panelTop + rect.height / 2;
+        })
+        .filter((center): center is number => center !== null);
+      if (centers.length === steps.length) setMobileStepCenters(centers);
+    };
+
+    updateMobileStepCenters();
+    window.addEventListener("resize", updateMobileStepCenters);
+    window.addEventListener("orientationchange", updateMobileStepCenters);
+    return () => {
+      window.removeEventListener("resize", updateMobileStepCenters);
+      window.removeEventListener("orientationchange", updateMobileStepCenters);
+    };
+  }, []);
+
+  const timelinePoint = (() => {
+    const path = processPath.current;
+    if (!path) return { x: 12, y: 126 };
+    const length = path.getTotalLength();
+    return path.getPointAtLength(length * timelineProgress);
+  })();
+
+  const stepRevealPoints = [0.04, 0.34, 0.64, 0.9];
+  const mobileTimelineStart = mobileStepCenters[0] ?? 30;
+  const mobileTimelineEnd =
+    mobileStepCenters[mobileStepCenters.length - 1] ?? mobileTimelineStart;
+
+  const mobileTimelinePosition = (() => {
+    const progressPoints = stepRevealPoints;
+    const linePositions = mobileStepCenters;
+    const nextIndex = progressPoints.findIndex(
+      (point) => timelineProgress <= point,
+    );
+    if (nextIndex <= 0) return linePositions[0];
+    if (nextIndex === -1) return linePositions[linePositions.length - 1];
+    const previousIndex = nextIndex - 1;
+    const progressRange =
+      progressPoints[nextIndex] - progressPoints[previousIndex];
+    const segmentProgress =
+      (timelineProgress - progressPoints[previousIndex]) / progressRange;
+    return (
+      linePositions[previousIndex] +
+      (linePositions[nextIndex] - linePositions[previousIndex]) *
+        segmentProgress
+    );
+  })();
+  const mobileTimelineProgressHeight = Math.max(
+    0,
+    mobileTimelinePosition - mobileTimelineStart,
+  );
+  const isTimelineComplete = timelineProgress >= stepRevealPoints[3];
+  const mobileTimelineFillHeight = isTimelineComplete
+    ? Math.max(0, mobileTimelineEnd - mobileTimelineStart)
+    : mobileTimelineProgressHeight;
+
+  useEffect(() => {
+    if (menuState === "closed") return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setMenuOpen(false);
+        closeMobileMenu(true);
         menuButton.current?.focus();
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [menuOpen]);
+  }, [menuState]);
+
+  useEffect(() => {
+    return () => {
+      if (menuCloseTimer.current) window.clearTimeout(menuCloseTimer.current);
+    };
+  }, []);
+
+  function closeMobileMenu(restoreFocus = false) {
+    if (menuState === "closed" || menuState === "closing") return;
+    setMenuState("closing");
+    if (menuCloseTimer.current) window.clearTimeout(menuCloseTimer.current);
+    menuCloseTimer.current = window.setTimeout(() => {
+      setMenuState("closed");
+      if (restoreFocus) menuButton.current?.focus();
+    }, 190);
+  }
+
+  function toggleMobileMenu() {
+    if (menuState === "open" || menuState === "opening") {
+      closeMobileMenu();
+      return;
+    }
+    if (menuCloseTimer.current) window.clearTimeout(menuCloseTimer.current);
+    setMenuState("opening");
+    window.requestAnimationFrame(() => setMenuState("open"));
+  }
 
   function navigate(id: string) {
-    setMenuOpen(false);
+    closeMobileMenu();
     setActiveSection(id);
     const target = document.getElementById(id);
     target?.scrollIntoView({
@@ -245,7 +336,7 @@ export function LandingPage({ onNavigateToLogin }: Props) {
   }
 
   return (
-    <div className="lp" ref={shell}>
+    <div className={`lp${isLeaving ? " is-leaving" : ""}`} ref={shell}>
       <a className="lp-skip" href="#lp-main">
         Skip to content
       </a>
@@ -284,25 +375,33 @@ export function LandingPage({ onNavigateToLogin }: Props) {
               onClick={login}
             >
               Login
-              <ArrowRight size={16} />
+              <ArrowUpRight size={16} aria-hidden="true" />
             </button>
             <button
               type="button"
               className="lp-menu-toggle"
               ref={menuButton}
-              aria-label={menuOpen ? "Close navigation" : "Open navigation"}
-              aria-expanded={menuOpen}
+              aria-label={
+                menuState === "open" || menuState === "opening"
+                  ? "Close navigation"
+                  : "Open navigation"
+              }
+              aria-expanded={menuState === "open" || menuState === "opening"}
               aria-controls="lp-mobile-nav"
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={toggleMobileMenu}
             >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+              {menuState === "open" || menuState === "opening" ? (
+                <X size={22} />
+              ) : (
+                <Menu size={22} />
+              )}
             </button>
           </div>
         </div>
-        {menuOpen && (
+        {menuState !== "closed" && (
           <nav
             id="lp-mobile-nav"
-            className="lp-mobile-links"
+            className={`lp-mobile-links is-${menuState}`}
             aria-label="Mobile navigation"
           >
             {links.map(([id, label]) => (
@@ -316,7 +415,7 @@ export function LandingPage({ onNavigateToLogin }: Props) {
                 }}
               >
                 {label}
-                <ArrowRight size={15} />
+                <ChevronRight size={18} aria-hidden="true" />
               </a>
             ))}
           </nav>
@@ -332,10 +431,6 @@ export function LandingPage({ onNavigateToLogin }: Props) {
         >
           <div className="lp-container lp-hero-stage">
             <div className="lp-hero-copy">
-              <p className="lp-eyebrow">
-                <span className="lp-status-dot" />
-                Your personal training companion
-              </p>
               <h1 id="lp-title">
                 OJT Logbook<span>Every day counts.</span>
               </h1>
@@ -351,10 +446,10 @@ export function LandingPage({ onNavigateToLogin }: Props) {
                   onClick={login}
                 >
                   Login to your logbook
-                  <ArrowRight size={18} />
+                  <ArrowUpRight size={18} aria-hidden="true" />
                 </button>
                 <a
-                  className="lp-text-link"
+                  className="lp-text-link lp-hero-secondary"
                   href="#features"
                   onClick={(e) => {
                     e.preventDefault();
@@ -376,12 +471,22 @@ export function LandingPage({ onNavigateToLogin }: Props) {
               alt="OJT Logbook on a phone, with training hours, an activity calendar and a progress tracker"
               fetchPriority="high"
             />
-            <div className="lp-hero-foot">
-              <span>LESS PAPERWORK. MORE PROGRESS.</span>
-              <span>
-                Daily records<small>/</small>Training hours<small>/</small>
-                Ready-to-print reports
-              </span>
+            <div
+              className="lp-hero-metrics"
+              aria-label="OJT Logbook highlights"
+            >
+              <div>
+                <strong>Daily</strong>
+                <span>activity records</span>
+              </div>
+              <div>
+                <strong>Automatic</strong>
+                <span>hour totals</span>
+              </div>
+              <div>
+                <strong>3 formats</strong>
+                <span>ready to export</span>
+              </div>
             </div>
           </div>
         </section>
@@ -436,15 +541,126 @@ export function LandingPage({ onNavigateToLogin }: Props) {
                 every step stays together.
               </p>
             </div>
-            <ol className="lp-steps">
-              {steps.map(([title, text], index) => (
-                <li key={title}>
-                  <span className="lp-step-number">0{index + 1}</span>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </li>
-              ))}
-            </ol>
+            <div className="lp-process-scroller" ref={processSection}>
+              <div
+                className="lp-process"
+                ref={processPanel}
+                style={
+                  {
+                    "--lp-mobile-line-top": `${mobileTimelineStart}px`,
+                    "--lp-mobile-line-height": `${Math.max(
+                      0,
+                      mobileTimelineEnd - mobileTimelineStart,
+                    )}px`,
+                  } as CSSProperties
+                }
+              >
+                <svg
+                  className="lp-process-line"
+                  viewBox="0 0 1120 250"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    className="lp-process-line-shadow"
+                    d="M12 126 C175 210 250 20 390 76 S620 206 760 84 S955 23 1108 82"
+                  />
+                  <path
+                    ref={processPath}
+                    className="lp-process-line-base"
+                    d="M12 126 C175 210 250 20 390 76 S620 206 760 84 S955 23 1108 82"
+                  />
+                  <path
+                    className="lp-process-line-progress"
+                    pathLength="1"
+                    style={{ strokeDasharray: `${timelineProgress} 1` }}
+                    d="M12 126 C175 210 250 20 390 76 S620 206 760 84 S955 23 1108 82"
+                  />
+                  <g
+                    transform={`translate(${timelinePoint.x} ${timelinePoint.y})`}
+                  >
+                    <g
+                      transform={`rotate(${timelineProgress * 720})`}
+                      className="lp-process-wheel"
+                    >
+                      <circle className="lp-process-wheel-tire" r="12" />
+                      <circle className="lp-process-wheel-hub" r="3" />
+                      <path
+                        className="lp-process-wheel-spokes"
+                        d="M0 -7V7 M-7 0H7 M-5 -5L5 5 M5 -5L-5 5"
+                      />
+                    </g>
+                  </g>
+                </svg>
+                <span
+                  className="lp-process-mobile-progress"
+                  style={{
+                    height: `${mobileTimelineFillHeight}px`,
+                    top: `${mobileTimelineStart}px`,
+                  }}
+                  aria-hidden="true"
+                />
+                <svg
+                  className={`lp-process-mobile-wheel${
+                    isTimelineComplete ? " is-locked" : ""
+                  }`}
+                  viewBox="-14 -14 28 28"
+                  style={{
+                    top: `${mobileTimelinePosition}px`,
+                    transform: `translate(-50%, -50%) rotate(${timelineProgress * 720}deg)`,
+                  }}
+                  aria-hidden="true"
+                >
+                  <circle className="lp-process-wheel-tire" r="12" />
+                  <circle className="lp-process-wheel-hub" r="3" />
+                  <path
+                    className="lp-process-wheel-spokes"
+                    d="M0 -7V7 M-7 0H7 M-5 -5L5 5 M5 -5L-5 5"
+                  />
+                </svg>
+                <ol className="lp-steps">
+                  {steps.map(([title, text], index) => (
+                    <li
+                      className={
+                        timelineProgress >= stepRevealPoints[index]
+                          ? "is-revealed"
+                          : ""
+                      }
+                      key={title}
+                    >
+                      <span
+                        className={`lp-step-number${
+                          isTimelineComplete && index === steps.length - 1
+                            ? " has-mobile-wheel"
+                            : ""
+                        }`}
+                        ref={(node) => {
+                          stepNumberRefs.current[index] = node;
+                        }}
+                      >
+                        0{index + 1}
+                        {isTimelineComplete && index === steps.length - 1 ? (
+                          <svg
+                            className="lp-process-step-wheel"
+                            viewBox="-14 -14 28 28"
+                            aria-hidden="true"
+                          >
+                            <circle className="lp-process-wheel-tire" r="12" />
+                            <circle className="lp-process-wheel-hub" r="3" />
+                            <path
+                              className="lp-process-wheel-spokes"
+                              d="M0 -7V7 M-7 0H7 M-5 -5L5 5 M5 -5L-5 5"
+                            />
+                          </svg>
+                        ) : null}
+                      </span>
+                      <h3>{title}</h3>
+                      <p>{text}</p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
           </div>
         </section>
 
