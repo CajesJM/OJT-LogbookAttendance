@@ -1,9 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
 import {
+  ArrowLeft,
   ArrowRight,
   Clock3,
   Eye,
   EyeOff,
+  House,
   Info,
   LockKeyhole,
   ShieldCheck,
@@ -20,6 +22,7 @@ type Props = {
   hasLocalAccount: boolean;
   lockedUntil: number | null;
   onClearData: () => Promise<boolean>;
+  onBackToHome?: () => void;
 };
 
 export function LoginScreen({
@@ -28,6 +31,7 @@ export function LoginScreen({
   hasLocalAccount,
   lockedUntil,
   onClearData,
+  onBackToHome,
 }: Props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -92,6 +96,17 @@ export function LoginScreen({
         </div>
         <div className="login-form-panel">
           <div className="login-panel-actions">
+            {onBackToHome && (
+              <button
+                className="icon-button login-home-button"
+                type="button"
+                onClick={onBackToHome}
+                aria-label="Back to Landing Page"
+                title="Back to Landing Page"
+              >
+                <House size={17} />
+              </button>
+            )}
             {hasLocalAccount && (
               <button
                 className="icon-button login-reset-button"

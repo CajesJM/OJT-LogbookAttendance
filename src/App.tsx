@@ -9,6 +9,7 @@ import {
 import { flushSync } from "react-dom";
 import { BookOpenCheck, Download, Printer } from "lucide-react";
 import { AppNavigation } from "./components/AppNavigation";
+import { LandingPage } from "./components/LandingPage";
 import { LoginScreen } from "./components/LoginScreen";
 import { ProfileAvatar } from "./components/ProfileAvatar";
 import { ConfirmModal } from "./components/ui/ConfirmModal";
@@ -101,6 +102,7 @@ function App() {
       ? "left"
       : "right";
   const [user, setUser] = useState<UserAccount | null>(null);
+  const [guestView, setGuestView] = useState<"landing" | "login">("landing");
   const [profile, setProfile] = useState<StudentProfile>(emptyProfile);
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [recordToEdit, setRecordToEdit] = useState<DailyRecord | null>(null);
@@ -375,6 +377,7 @@ function App() {
     if (!approved) return;
     await setStoredValue(STORAGE_KEYS.user, null);
     setUser(null);
+    setGuestView("landing");
     navigateTo("dashboard");
     showToast("You have been signed out.", "info");
   }
@@ -630,13 +633,18 @@ function App() {
   return (
     <>
       {!user ? (
-        <LoginScreen
-          onLogin={handleLogin}
-          onError={handleLoginError}
-          hasLocalAccount={hasLocalAccount}
-          lockedUntil={loginRateLimit.lockedUntil}
-          onClearData={clearLocalBrowserData}
-        />
+        guestView === "landing" ? (
+          <LandingPage onNavigateToLogin={() => setGuestView("login")} />
+        ) : (
+          <LoginScreen
+            onLogin={handleLogin}
+            onError={handleLoginError}
+            hasLocalAccount={hasLocalAccount}
+            lockedUntil={loginRateLimit.lockedUntil}
+            onClearData={clearLocalBrowserData}
+            onBackToHome={() => setGuestView("landing")}
+          />
+        )
       ) : (
         <div className="app-shell">
           <div className="tab-viewport">
