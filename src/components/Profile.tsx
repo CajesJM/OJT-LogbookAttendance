@@ -3,6 +3,7 @@ import {
   Download,
   Info,
   LogOut,
+  MessageSquareWarning,
   Pencil,
   Printer,
   Save,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { AccountHelpModal } from "./ui/AccountHelpModal";
+import { FeedbackModal } from "./ui/FeedbackModal";
 import { normalizeDutyDays } from "../lib/completionEstimate";
 import type { StudentProfile } from "../types";
 
@@ -53,6 +55,7 @@ export function Profile({
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<StudentProfile | null>(null);
   const [showAccountHelp, setShowAccountHelp] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   function update<K extends keyof StudentProfile>(
     key: K,
@@ -332,10 +335,25 @@ export function Profile({
             <Printer size={18} /> Print records
           </button>
         </section>
+        <section className="surface tool-section feedback-tool">
+          <p className="section-kicker">Help and feedback</p>
+          <h2>Report a problem</h2>
+          <p className="muted">
+            Tell us about a bug, suggest an improvement, or share your experience.
+          </p>
+          <button className="button secondary" type="button" onClick={() => setShowFeedback(true)}>
+            <MessageSquareWarning size={18} aria-hidden="true" /> Send feedback
+          </button>
+        </section>
       </aside>
       <AccountHelpModal
         open={showAccountHelp}
         onClose={() => setShowAccountHelp(false)}
+      />
+      <FeedbackModal
+        open={showFeedback}
+        defaultEmail={profile.email}
+        onClose={() => setShowFeedback(false)}
       />
     </main>
   );
