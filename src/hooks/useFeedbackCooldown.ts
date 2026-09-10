@@ -7,7 +7,9 @@ export const FEEDBACK_COOLDOWN_SECONDS = 5 * 60;
 function readRemainingSeconds() {
   if (typeof window === "undefined") return 0;
   try {
-    const cooldownUntil = Number(window.localStorage.getItem(FEEDBACK_COOLDOWN_KEY));
+    const cooldownUntil = Number(
+      window.localStorage.getItem(FEEDBACK_COOLDOWN_KEY),
+    );
     if (!Number.isFinite(cooldownUntil)) return 0;
     return Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
   } catch {
@@ -33,7 +35,8 @@ export function startFeedbackCooldown(seconds = FEEDBACK_COOLDOWN_SECONDS) {
 }
 
 export function useFeedbackCooldown() {
-  const [remainingSeconds, setRemainingSeconds] = useState(readRemainingSeconds);
+  const [remainingSeconds, setRemainingSeconds] =
+    useState(readRemainingSeconds);
 
   useEffect(() => {
     const updateRemaining = () => {

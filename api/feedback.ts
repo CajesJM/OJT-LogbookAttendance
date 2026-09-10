@@ -1,4 +1,4 @@
-type FeedbackKind = "bug" | "suggestion" | "feedback";
+type FeedbackKind = "bug" | "suggestion" | "format" | "feedback";
 
 type AttachmentPayload = {
   content?: unknown;
@@ -35,6 +35,7 @@ const ALLOWED_ATTACHMENT_TYPES = new Set([
 const KIND_LABELS: Record<FeedbackKind, string> = {
   bug: "Problem or bug",
   suggestion: "Feature suggestion",
+  format: "New format suggestion",
   feedback: "General feedback",
 };
 
@@ -129,7 +130,8 @@ function validatePayload(payload: FeedbackPayload) {
       error: "The details must contain 15 to 1000 characters.",
     } as const;
   if (!email) return { error: "A reply email address is required." } as const;
-  if (!isEmail(email)) return { error: "Enter a valid reply email address." } as const;
+  if (!isEmail(email))
+    return { error: "Enter a valid reply email address." } as const;
 
   let attachment: { content: string; filename: string } | undefined;
   if (payload.attachment) {

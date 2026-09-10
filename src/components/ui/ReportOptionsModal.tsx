@@ -203,12 +203,14 @@ export function ReportOptionsModal({
             </button>
           </div>
         </div>
-        <p className="report-option-label">Page layout</p>
-        <div
-          className="report-layout-options"
-          role="radiogroup"
-          aria-label="Report page layout"
-        >
+        <div className="report-settings-grid">
+          <div className="report-setting report-layout-setting">
+            <p className="report-option-label">Page layout</p>
+            <div
+              className="report-layout-options"
+              role="radiogroup"
+              aria-label="Report page layout"
+            >
           <label
             className={`${!separateByMonth ? "selected" : ""}${template === "tmc" ? " is-disabled" : ""}`}
           >
@@ -241,77 +243,81 @@ export function ReportOptionsModal({
               <small>Start every month on a new page.</small>
             </span>
           </label>
-        </div>
-        <p className="report-option-label">Paper size</p>
-        <div
-          className="paper-size-options"
-          role="radiogroup"
-          aria-label="Report paper size"
-        >
-          {PAPER_SIZES.map((option) => (
-            <label
-              className={paperSize === option.id ? "selected" : ""}
-              key={option.id}
-            >
-              <input
-                type="radio"
-                name="paper-size"
-                checked={paperSize === option.id}
-                onChange={() => onPaperSizeChange(option.id)}
-              />
-              <span
-                className="paper-size-sheet"
-                style={{ aspectRatio: `${option.widthMm} / ${option.heightMm}` }}
-                aria-hidden="true"
-              />
-              <span className="paper-size-copy">
-                <strong>{option.name}</strong>
-                {option.alternateName && <small>{option.alternateName}</small>}
-                <span>{option.dimensions}</span>
-                <small>{option.metricDimensions}</small>
-              </span>
-            </label>
-          ))}
-        </div>
-        {action === "download" && (
-          <>
-            <p className="report-option-label">File format</p>
-            <div
-              className="report-format-options"
-              role="radiogroup"
-              aria-label="Download file format"
-            >
-              <label className={format === "pdf" ? "selected" : ""}>
-                <input
-                  type="radio"
-                  name="report-format"
-                  checked={format === "pdf"}
-                  onChange={() => onFormatChange("pdf")}
-                />
-                <Files size={17} aria-hidden="true" />
-                <span>
-                  <strong>PDF</strong>
-                  <small>Ready to print</small>
-                </span>
-              </label>
-              <label className={format === "docx" ? "selected" : ""}>
-                <input
-                  type="radio"
-                  name="report-format"
-                  checked={format === "docx"}
-                  onChange={() => onFormatChange("docx")}
-                />
-                <FileText size={17} aria-hidden="true" />
-                <span>
-                  <strong>DOCX</strong>
-                  <small>
-                    {template === "tmc" ? "Opens in Word" : "Editable in Word"}
-                  </small>
-                </span>
-              </label>
             </div>
-          </>
-        )}
+          </div>
+          <div className="report-setting report-paper-setting">
+            <p className="report-option-label">Paper size</p>
+            <div
+              className="paper-size-options"
+              role="radiogroup"
+              aria-label="Report paper size"
+            >
+              {PAPER_SIZES.map((option) => (
+                <label
+                  className={paperSize === option.id ? "selected" : ""}
+                  key={option.id}
+                >
+                  <input
+                    type="radio"
+                    name="paper-size"
+                    checked={paperSize === option.id}
+                    onChange={() => onPaperSizeChange(option.id)}
+                  />
+                  <span
+                    className="paper-size-sheet"
+                    style={{ aspectRatio: `${option.widthMm} / ${option.heightMm}` }}
+                    aria-hidden="true"
+                  />
+                  <span className="paper-size-copy">
+                    <strong>{option.name}</strong>
+                    {option.alternateName && <small>{option.alternateName}</small>}
+                    <span>{option.dimensions}</span>
+                    <small>{option.metricDimensions}</small>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+          {action === "download" && (
+            <div className="report-setting report-format-setting">
+              <p className="report-option-label">File format</p>
+              <div
+                className="report-format-options"
+                role="radiogroup"
+                aria-label="Download file format"
+              >
+                <label className={format === "pdf" ? "selected" : ""}>
+                  <input
+                    type="radio"
+                    name="report-format"
+                    checked={format === "pdf"}
+                    onChange={() => onFormatChange("pdf")}
+                  />
+                  <Files size={17} aria-hidden="true" />
+                  <span>
+                    <strong>PDF</strong>
+                    <small>Ready to print</small>
+                  </span>
+                </label>
+                <label className={format === "docx" ? "selected" : ""}>
+                  <input
+                    type="radio"
+                    name="report-format"
+                    checked={format === "docx"}
+                    onChange={() => onFormatChange("docx")}
+                  />
+                  <FileText size={17} aria-hidden="true" />
+                  <span>
+                    <strong>DOCX</strong>
+                    <small>
+                      {template === "tmc" ? "Opens in Word" : "Editable in Word"}
+                    </small>
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="modal-actions">
           <button
             className="button secondary"

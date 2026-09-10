@@ -1,7 +1,7 @@
 .report-layout-options {
   display: grid;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 0;
 }
 .paper-size-options {
   display: grid;
@@ -356,6 +356,60 @@
   color: var(--ink) !important;
   font-size: 0.72rem !important;
   font-weight: 750;
+}
+.report-settings-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-areas:
+    "layout paper"
+    "format paper";
+  align-items: start;
+  gap: 12px;
+  margin-top: 16px;
+}
+.report-settings-grid:not(:has(.report-format-setting)) {
+  grid-template-areas: "layout paper";
+}
+.report-setting {
+  min-width: 0;
+}
+.report-layout-setting {
+  grid-area: layout;
+}
+.report-paper-setting {
+  grid-area: paper;
+}
+.report-format-setting {
+  grid-area: format;
+}
+.report-setting .report-option-label {
+  margin: 0 0 7px !important;
+}
+.report-settings-grid .report-layout-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.report-settings-grid .report-layout-options label {
+  min-height: 70px;
+  gap: 7px;
+  padding: 9px;
+}
+.report-settings-grid .paper-size-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 0;
+}
+.report-settings-grid .paper-size-options label {
+  min-height: 70px;
+  padding-block: 8px;
+}
+.report-settings-grid .report-format-options {
+  gap: 7px;
+}
+.report-settings-grid .report-format-options label {
+  min-height: 52px;
+  gap: 6px;
+  padding: 8px;
 }
 .report-format-options {
   display: grid;

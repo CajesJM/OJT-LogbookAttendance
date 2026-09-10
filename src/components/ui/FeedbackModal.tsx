@@ -29,7 +29,7 @@ type Props = {
   onClose: () => void;
 };
 
-type FeedbackKind = "bug" | "suggestion" | "feedback";
+type FeedbackKind = "bug" | "suggestion" | "format" | "feedback";
 type FormErrors = Partial<
   Record<"subject" | "details" | "email" | "file", string>
 >;
@@ -40,8 +40,12 @@ const SEND_TIMEOUT_MS = 15_000;
 const KIND_LABELS: Record<FeedbackKind, string> = {
   bug: "Problem or bug",
   suggestion: "Feature suggestion",
+  format: "New format suggestion",
   feedback: "General feedback",
 };
+const KIND_OPTIONS = Object.entries(KIND_LABELS) as Array<
+  [FeedbackKind, string]
+>;
 
 export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
   const [kind, setKind] = useState<FeedbackKind>("bug");
@@ -308,20 +312,28 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
                     autoComplete="off"
                   />
                 </label>
-                <label>
-                  <span>Feedback type</span>
-                  <select
-                    value={kind}
-                    onChange={(event) =>
-                      setKind(event.target.value as FeedbackKind)
-                    }
-                  >
-                    <option value="bug">Problem or bug</option>
-                    <option value="suggestion">Feature suggestion</option>
-                    <option value="feedback">General feedback</option>
-                  </select>
-                </label>
-                <label>
+                <fieldset className="feedback-type-fieldset">
+                  <legend>Feedback type</legend>
+                  <div className="feedback-type-options">
+                    {KIND_OPTIONS.map(([value, label]) => (
+                      <label
+                        className={kind === value ? "is-selected" : undefined}
+                        key={value}
+                      >
+                        <input
+                          type="radio"
+                          name="feedback-kind"
+                          value={value}
+                          checked={kind === value}
+                          onChange={() => setKind(value)}
+                        />
+                        <span>{label}</span>
+                        <Check size={14} aria-hidden="true" />
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <label className="feedback-title-field">
                   <span className="feedback-label-row">
                     <span>Title</span>
                     <small>{subject.length}/80</small>
@@ -350,7 +362,7 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
                     </small>
                   )}
                 </label>
-                <label>
+                <label className="feedback-details-field">
                   <span className="feedback-label-row">
                     <span>What happened?</span>
                     <small>{details.length}/1000</small>
@@ -378,7 +390,7 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
                     </small>
                   )}
                 </label>
-                <label>
+                <label className="feedback-email-field">
                   <span>
                     Email for a reply
                   </span>

@@ -132,9 +132,33 @@ function Brand() {
 }
 
 function ProductTour() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setIsVisible(true);
+      return;
+    }
+
+    const section = sectionRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setIsVisible(true);
+        observer.disconnect();
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -8% 0px" },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
-      className="lp-tour lp-section"
+      ref={sectionRef}
+      className={`lp-tour lp-section${isVisible ? " is-visible" : ""}`}
       id="overview"
       tabIndex={-1}
       aria-labelledby="lp-tour-heading"
@@ -208,18 +232,42 @@ export function LandingPage({
   ]);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setActiveSection(entry.target.id);
-        });
-      },
-      { rootMargin: "-15% 0px -55% 0px" },
-    );
-    shell.current
-      ?.querySelectorAll("main section[id]")
-      .forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+    let frame = 0;
+    const updateActiveSection = () => {
+      frame = 0;
+      const main = shell.current?.querySelector("main");
+      const sections = Array.from(
+        shell.current?.querySelectorAll<HTMLElement>("main section[id]") ?? [],
+      );
+      if (!main || sections.length === 0) return;
+
+      const guideLine = window.scrollY + Math.max(120, window.innerHeight * 0.28);
+      const mainTop = main.getBoundingClientRect().top + window.scrollY;
+      let currentSection = sections[0].id;
+      for (const section of sections) {
+        const sectionTop =
+          section.id === "home"
+            ? mainTop
+            : section.getBoundingClientRect().top + window.scrollY;
+        if (sectionTop > guideLine) break;
+        currentSection = section.id;
+      }
+      setActiveSection((current) =>
+        current === currentSection ? current : currentSection,
+      );
+    };
+    const scheduleUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateActiveSection);
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    return () => {
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   useEffect(() => {
@@ -426,8 +474,10 @@ export function LandingPage({
               className="lp-button lp-button-primary lp-nav-login"
               onClick={login}
             >
-              Login
-              <ArrowUpRight size={16} aria-hidden="true" />
+              <span className="lp-nav-login-label">Login</span>
+              <span className="lp-nav-login-icon" aria-hidden="true">
+                <ArrowRight size={18} />
+              </span>
             </button>
             <button
               type="button"
