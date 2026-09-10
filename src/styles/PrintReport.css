@@ -1,0 +1,300 @@
+@media print {
+  body {
+    background: #fff;
+    color: #111;
+  }
+  .print-hide,
+  .page-content,
+  .toast-viewport,
+  .modal-backdrop {
+    display: none !important;
+  }
+  .app-shell {
+    padding: 0;
+  }
+  .print-report {
+    display: block;
+    color: #111;
+  }
+  .tmc-report {
+    width: var(--paper-width);
+  }
+  .tmc-form-page {
+    position: relative;
+    width: var(--paper-width);
+    height: var(--paper-height);
+    overflow: hidden;
+    break-after: page;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .tmc-form-page:last-child {
+    break-after: auto;
+  }
+  .tmc-form-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(215.9mm * var(--tmc-scale));
+    height: calc(332.04mm * var(--tmc-scale));
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+  }
+  .tmc-form-template {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .tmc-print-page-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: block;
+    width: auto;
+    height: var(--paper-height);
+    max-width: var(--paper-width);
+    max-height: var(--paper-height);
+    transform: translate(-50%, -50%);
+  }
+  .tmc-field {
+    position: absolute;
+    height: 1.9%;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    font-size: calc(7pt * var(--tmc-scale));
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .tmc-name-field,
+  .tmc-course-field {
+    left: 23.8%;
+    width: 29.4%;
+  }
+  .tmc-office-field,
+  .tmc-period-field {
+    left: 64%;
+    width: 29.4%;
+  }
+  .tmc-name-field,
+  .tmc-office-field {
+    top: 17.5%;
+  }
+  .tmc-course-field,
+  .tmc-period-field {
+    top: 19.43%;
+  }
+  .tmc-form-day-row {
+    position: absolute;
+    left: 12.7%;
+    width: 81.5%;
+    height: 1.584%;
+    display: grid;
+    grid-template-columns: 10.8% 10.7% 10.8% 10.7% 11.4% 45.6%;
+    align-items: center;
+    overflow: hidden;
+    font-size: calc(6.2pt * var(--tmc-scale));
+    line-height: 1;
+  }
+  .tmc-form-day-row > span {
+    min-width: 0;
+    overflow: hidden;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .tmc-form-day-row .tmc-experience-cell {
+    padding: 0 1.2mm;
+    text-align: left;
+    text-overflow: ellipsis;
+    font-size: calc(5.8pt * var(--tmc-scale));
+  }
+  .print-report h1 {
+    margin: 0 0 10px;
+    font-size: 20px;
+  }
+  .print-report h2 {
+    margin: 18px 0 7px;
+    font-size: 15px;
+  }
+  .print-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 14px;
+    border: 1px solid #999;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .print-summary p {
+    margin: 1px 0;
+  }
+  .printable-record {
+    break-inside: avoid;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 23mm 23mm;
+    gap: 3mm;
+    align-items: start;
+    border-top: 1px solid #aaa;
+    padding: 7px 0;
+  }
+  .print-record-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 23mm 23mm;
+    gap: 3mm;
+    align-items: end;
+    margin-top: 8px;
+  }
+  .print-record-head h2 {
+    margin: 0;
+  }
+  .print-record-head b {
+    font-size: 8px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .print-month-break {
+    break-before: page;
+    page-break-before: always;
+  }
+  .worklog-page {
+    break-inside: avoid-page;
+  }
+  .worklog-title-row {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 12mm;
+    margin-bottom: 5mm;
+  }
+  .worklog-title-row h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  .worklog-title-row p {
+    min-width: 52mm;
+    margin: 0;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #555;
+    font-size: 10px;
+  }
+  .worklog-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5mm;
+    margin-bottom: 3mm;
+    font-size: 9px;
+  }
+  .worklog-table {
+    width: 100%;
+    border: 1px solid #555;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+  }
+  .worklog-table th,
+  .worklog-table td {
+    border: 0;
+    border-right: 1px solid #555;
+    border-bottom: 1px solid #555;
+    padding: 4px 5px;
+    font-size: 9px;
+    line-height: 1.25;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+  .worklog-table th {
+    background: #e7e7e7;
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+  .worklog-table th:last-child,
+  .worklog-table td:last-child {
+    border-right: 0;
+  }
+  .worklog-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .worklog-date-column {
+    width: 23mm;
+  }
+  .worklog-time-column {
+    width: 22mm;
+  }
+  .worklog-remaining-column {
+    width: 25mm;
+  }
+  .worklog-note-column {
+    width: 43mm;
+  }
+  .worklog-signature-column {
+    width: 25mm;
+  }
+  .worklog-table th:nth-child(3),
+  .worklog-table td:nth-child(3),
+  .worklog-table th:nth-child(4),
+  .worklog-table td:nth-child(4) {
+    text-align: center;
+    white-space: nowrap;
+  }
+  .worklog-signature-cell {
+    padding: 2px 4px !important;
+    text-align: center;
+  }
+  .worklog-signature-cell img {
+    display: block;
+    width: 21mm;
+    height: 7mm;
+    margin: 0 auto;
+    object-fit: contain;
+    border-bottom: 1px solid #777;
+  }
+  .printable-record h3 {
+    margin: 0 0 4px;
+    font-size: 12.5px;
+  }
+  .printable-record p {
+    margin: 2px 0;
+    font-size: 10.5px;
+    line-height: 1.35;
+  }
+  .print-record-content {
+    min-width: 0;
+  }
+  .print-hours-ledger {
+    display: grid;
+    justify-items: end;
+    padding: 0;
+    font-size: 8px;
+  }
+  .print-hours-ledger span {
+    color: #444;
+  }
+  .print-hours-ledger strong,
+  .print-hours-ledger b {
+    text-align: right;
+    white-space: nowrap;
+  }
+  .print-hours-ledger strong {
+    font-size: 10.5px;
+  }
+  .print-signature {
+    display: grid;
+    justify-items: end;
+    gap: 1px;
+    width: 100%;
+    font-size: 8px;
+  }
+  .print-signature-column {
+    min-width: 0;
+  }
+  .print-signature img {
+    width: 21mm;
+    max-width: 100%;
+    height: 7mm;
+    object-fit: contain;
+    object-position: right center;
+    border-bottom: 1px solid #777;
+  }
+}

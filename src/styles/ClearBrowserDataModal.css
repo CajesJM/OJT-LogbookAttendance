@@ -1,0 +1,30 @@
+.clear-data-list {
+  display: grid;
+  gap: 6px;
+  margin: 15px 0;
+  padding-left: 19px;
+  color: #46564f;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+.clear-data-warning {
+  margin: 0 0 15px !important;
+  padding: 9px 11px;
+  border-left: 3px solid var(--danger);
+  background: #fff3f3;
+  color: #873838 !important;
+  font-size: 0.74rem !important;
+  font-weight: 700;
+}
+.clear-data-confirmation {
+  display: grid;
+  gap: 7px;
+}
+.clear-data-confirmation span {
+  font-size: 0.75rem;
+}
+.clear-data-confirmation input {
+  min-height: 42px;
+  letter-spacing: 0;
+  font-weight: 750;
+}

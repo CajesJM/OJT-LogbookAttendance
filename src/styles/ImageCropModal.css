@@ -1,0 +1,52 @@
+.image-crop-modal {
+  width: min(430px, 100%);
+}
+.crop-viewport {
+  position: relative;
+  width: min(280px, 100%);
+  aspect-ratio: 1;
+  margin: 18px auto 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.crop-viewport:active {
+  cursor: grabbing;
+}
+.crop-viewport img {
+  position: absolute;
+  max-width: none;
+  max-height: none;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
+}
+.crop-guide {
+  position: absolute;
+  inset: 8%;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(15, 27, 22, 0.38);
+  pointer-events: none;
+}
+.crop-zoom-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: min(280px, 100%);
+  margin: 0 auto;
+  color: var(--muted);
+}
+.crop-zoom-control input {
+  width: 100%;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  accent-color: var(--primary);
+}

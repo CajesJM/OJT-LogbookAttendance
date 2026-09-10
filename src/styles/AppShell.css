@@ -1,0 +1,82 @@
+.app-shell {
+  min-height: 100vh;
+  padding: 16px 22px 108px;
+  background: var(--bg);
+}
+.tab-viewport {
+  overflow: hidden;
+  position: relative;
+}
+.tab-panel {
+  animation: slide-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tab-panel[data-dir="left"] {
+  animation-name: slide-in-from-right;
+}
+.tab-panel[data-dir="right"] {
+  animation-name: slide-in-from-left;
+}
+@keyframes slide-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes slide-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.topbar {
+  max-width: 1180px;
+  min-height: 64px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+.brand-lockup {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-lockup > div:last-child {
+  min-width: 0;
+}
+.brand-lockup p {
+  margin: 0 0 2px;
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.brand-lockup h1 {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.08rem;
+  line-height: 1.25;
+}

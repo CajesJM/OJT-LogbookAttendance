@@ -1,0 +1,32 @@
+.account-help-modal {
+  width: min(480px, 100%);
+}
+.account-help-intro {
+  margin-bottom: 17px !important;
+}
+.account-help-content {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+.account-help-content > section {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 11px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+.account-help-content > section > svg {
+  margin-top: 1px;
+  color: var(--primary);
+}
+.account-help-content strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+.account-help-content p {
+  font-size: 0.76rem;
+  line-height: 1.45;
+}

@@ -1,0 +1,120 @@
+.bottom-nav {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  width: min(390px, calc(100% - 28px));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 50px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 14px 34px rgba(28, 48, 39, 0.16);
+  backdrop-filter: blur(12px);
+}
+.bottom-nav-tabs {
+  min-width: 0;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--primary-strong);
+}
+.bottom-nav-tab {
+  flex: 0 0 46px;
+  width: 46px;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #c9dfd7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    flex-basis 220ms ease,
+    width 220ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+.bottom-nav-tab svg {
+  flex: 0 0 auto;
+  transition: transform 180ms ease;
+}
+.bottom-nav-tab span {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transform: translateX(-4px);
+  transition:
+    max-width 220ms ease,
+    opacity 160ms ease,
+    transform 180ms ease;
+}
+.bottom-nav-tab:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+}
+.bottom-nav-tab.active {
+  flex-basis: 116px;
+  width: 116px;
+  background: #ffffff;
+  color: #183c32;
+}
+.bottom-nav-tab.active svg {
+  transform: translateY(-1px);
+}
+.bottom-nav-tab.active span {
+  max-width: 110px;
+  opacity: 1;
+  transform: translateX(0);
+}
+.bottom-nav-tab.active:hover {
+  background: #f4f8f6;
+  color: var(--primary-strong);
+}
+.bottom-nav-add {
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 7px 16px rgba(23, 107, 85, 0.3);
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+.bottom-nav-add:hover {
+  background: var(--primary-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 9px 20px rgba(23, 107, 85, 0.34);
+}
+.bottom-nav-add:active {
+  transform: translateY(0) scale(0.96);
+}
+.bottom-nav-add:focus-visible,
+.bottom-nav-tab:focus-visible {
+  outline: 3px solid rgba(42, 157, 124, 0.28);
+  outline-offset: 2px;
+}
+

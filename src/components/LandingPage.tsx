@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import phoneUrl from "../assets/Showcase/OJTLogbook.webp";
-import "./landing/landing.css";
+import "../styles/LandingPage.css";
 
 type Props = {
   isLeaving?: boolean;

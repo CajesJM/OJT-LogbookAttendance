@@ -1,0 +1,88 @@
+.modal-backdrop {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(18, 31, 26, 0.56);
+  backdrop-filter: blur(3px);
+}
+.icon-origin-backdrop {
+  animation: modal-backdrop-in 0.24s ease-out both;
+}
+.icon-origin-backdrop.is-closing {
+  animation: modal-backdrop-out 0.22s ease-in both;
+  pointer-events: none;
+}
+.icon-origin-modal {
+  transform-origin: top right;
+  animation: icon-origin-modal-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.icon-origin-modal.is-closing {
+  animation: icon-origin-modal-out 0.22s cubic-bezier(0.7, 0, 0.84, 0) both;
+}
+@keyframes icon-origin-modal-in {
+  from {
+    opacity: 0;
+    transform: translate(32px, -28px) scale(0.16);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+@keyframes icon-origin-modal-out {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(32px, -28px) scale(0.16);
+  }
+}
+.modal {
+  position: relative;
+  width: min(430px, 100%);
+  padding: 26px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 24px 65px rgba(16, 31, 25, 0.24);
+}
+.modal-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.modal-icon.danger {
+  background: #faeaea;
+  color: var(--danger);
+}
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: var(--surface-soft);
+}
+.modal h2 {
+  margin: 17px 0 7px;
+  font-size: 1.15rem;
+}
+.modal p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 22px;
+}

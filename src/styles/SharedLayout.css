@@ -1,0 +1,47 @@
+.page-content {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+.surface {
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 5px 18px rgba(31, 55, 45, 0.05);
+}
+.eyebrow,
+.section-kicker {
+  margin: 0 0 6px;
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.muted {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+.tiny {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.section-head h2,
+.surface h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
