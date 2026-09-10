@@ -554,6 +554,15 @@
   .feedback-review dl > .full {
     grid-column: 1;
   }
+  .feedback-review-status {
+    align-items: flex-start;
+  }
+  .feedback-review dl > .full {
+    min-height: 88px;
+  }
+  .feedback-cooldown {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 460px) {

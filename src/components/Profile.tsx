@@ -15,6 +15,10 @@ import { ProfileAvatar } from "./ProfileAvatar";
 import { AccountHelpModal } from "./ui/AccountHelpModal";
 import { FeedbackModal } from "./ui/FeedbackModal";
 import { normalizeDutyDays } from "../lib/completionEstimate";
+import {
+  formatFeedbackCooldown,
+  useFeedbackCooldown,
+} from "../hooks/useFeedbackCooldown";
 import type { StudentProfile } from "../types";
 
 const DUTY_DAY_OPTIONS = [
@@ -56,6 +60,7 @@ export function Profile({
   const [editSnapshot, setEditSnapshot] = useState<StudentProfile | null>(null);
   const [showAccountHelp, setShowAccountHelp] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const feedbackCooldown = useFeedbackCooldown();
 
   function update<K extends keyof StudentProfile>(
     key: K,
@@ -341,8 +346,16 @@ export function Profile({
           <p className="muted">
             Tell us about a bug, suggest an improvement, or share your experience.
           </p>
-          <button className="button secondary" type="button" onClick={() => setShowFeedback(true)}>
-            <MessageSquareWarning size={18} aria-hidden="true" /> Send feedback
+          <button
+            className="button secondary"
+            type="button"
+            onClick={() => setShowFeedback(true)}
+            disabled={feedbackCooldown > 0}
+          >
+            <MessageSquareWarning size={18} aria-hidden="true" />
+            {feedbackCooldown > 0
+              ? `Send again in ${formatFeedbackCooldown(feedbackCooldown)}`
+              : "Send feedback"}
           </button>
         </section>
       </aside>

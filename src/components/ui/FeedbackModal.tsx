@@ -9,12 +9,19 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Clock3,
+  FileImage,
   MessageSquareWarning,
   Paperclip,
   Send,
   Trash2,
   X,
 } from "lucide-react";
+import {
+  formatFeedbackCooldown,
+  startFeedbackCooldown,
+  useFeedbackCooldown,
+} from "../../hooks/useFeedbackCooldown";
 
 type Props = {
   open: boolean;
@@ -23,7 +30,9 @@ type Props = {
 };
 
 type FeedbackKind = "bug" | "suggestion" | "feedback";
-type FormErrors = Partial<Record<"subject" | "details" | "email" | "file", string>>;
+type FormErrors = Partial<
+  Record<"subject" | "details" | "email" | "file", string>
+>;
 
 const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
 const SEND_TIMEOUT_MS = 15_000;
@@ -46,6 +55,7 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
   const [sendError, setSendError] = useState("");
   const [website, setWebsite] = useState("");
   const [isClosing, setIsClosing] = useState(false);
+  const cooldownRemaining = useFeedbackCooldown();
   const subjectRef = useRef<HTMLInputElement>(null);
   const openedAtRef = useRef(Date.now());
   const wasOpenRef = useRef(false);
@@ -94,10 +104,13 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
       nextErrors.subject = "Add a short title with at least 4 characters.";
     }
     if (details.trim().length < 15) {
-      nextErrors.details = "Describe what happened using at least 15 characters.";
+      nextErrors.details =
+        "Describe what happened using at least 15 characters.";
     }
-    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
-      nextErrors.email = "Enter a valid email address or leave this empty.";
+    if (!email.trim()) {
+      nextErrors.email = "Enter an email address so we can reply to you.";
+    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+      nextErrors.email = "Enter a valid email address.";
     }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -114,11 +127,17 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
     event.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setErrors((current) => ({ ...current, file: "Choose a JPG, PNG, or WebP image." }));
+      setErrors((current) => ({
+        ...current,
+        file: "Choose a JPG, PNG, or WebP image.",
+      }));
       return;
     }
     if (file.size > MAX_ATTACHMENT_BYTES) {
-      setErrors((current) => ({ ...current, file: "Choose an image smaller than 2 MB." }));
+      setErrors((current) => ({
+        ...current,
+        file: "Choose an image smaller than 2 MB.",
+      }));
       return;
     }
     setAttachment(file);
@@ -137,16 +156,26 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
         }
         resolve(result.slice(separatorIndex + 1));
       };
-      reader.onerror = () => reject(new Error("The screenshot could not be read."));
+      reader.onerror = () =>
+        reject(new Error("The screenshot could not be read."));
       reader.readAsDataURL(file);
     });
   }
 
   async function sendFeedback() {
+    if (cooldownRemaining > 0) {
+      setSendError(
+        `You can send another message in ${formatFeedbackCooldown(cooldownRemaining)}.`,
+      );
+      return;
+    }
     setIsSending(true);
     setSendError("");
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      SEND_TIMEOUT_MS,
+    );
 
     try {
       const attachmentPayload = attachment
@@ -157,9 +186,10 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
             size: attachment.size,
           }
         : undefined;
-      const submissionId = typeof crypto.randomUUID === "function"
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const submissionId =
+        typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const response = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -176,19 +206,29 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
         }),
         signal: controller.signal,
       });
-      const result = await response.json().catch(() => null) as { error?: string } | null;
+      const result = (await response.json().catch(() => null)) as {
+        error?: string;
+        retryAfter?: number;
+      } | null;
       if (!response.ok) {
-        throw new Error(result?.error || "Feedback could not be sent. Please try again.");
+        if (response.status === 429 && result?.retryAfter) {
+          startFeedbackCooldown(result.retryAfter);
+        }
+        throw new Error(
+          result?.error || "Feedback could not be sent. Please try again.",
+        );
       }
 
+      startFeedbackCooldown();
       setIsSending(false);
       setStep("sent");
     } catch (error) {
-      const message = error instanceof DOMException && error.name === "AbortError"
-        ? "The request took too long. Check your connection and try again."
-        : error instanceof Error
-          ? error.message
-          : "Feedback could not be sent. Please try again.";
+      const message =
+        error instanceof DOMException && error.name === "AbortError"
+          ? "The request took too long. Check your connection and try again."
+          : error instanceof Error
+            ? error.message
+            : "Feedback could not be sent. Please try again.";
       setSendError(message);
       setIsSending(false);
     } finally {
@@ -223,22 +263,36 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
 
         {step === "sent" ? (
           <div className="feedback-success" role="status">
-            <span><Check size={25} aria-hidden="true" /></span>
+            <span>
+              <Check size={25} aria-hidden="true" />
+            </span>
             <p className="section-kicker">Feedback received</p>
             <h2 id="feedback-title">Thank you for helping us improve.</h2>
             <p>Your message was sent successfully.</p>
-            <button className="button primary" type="button" onClick={closeWithAnimation}>
+            <p className="feedback-success-cooldown">
+              <Clock3 size={14} aria-hidden="true" /> You can send another in{" "}
+              <strong>{formatFeedbackCooldown(cooldownRemaining)}</strong>
+            </p>
+            <button
+              className="button primary"
+              type="button"
+              onClick={closeWithAnimation}
+            >
               Done
             </button>
           </div>
         ) : (
           <>
             <div className="feedback-modal-heading">
-              <span className="modal-icon"><MessageSquareWarning size={22} aria-hidden="true" /></span>
+              <span className="modal-icon">
+                <MessageSquareWarning size={22} aria-hidden="true" />
+              </span>
               <div>
                 <p className="section-kicker">Help improve OJT Logbook</p>
                 <h2 id="feedback-title">
-                  {step === "form" ? "Report a problem or share feedback" : "Review your feedback"}
+                  {step === "form"
+                    ? "Report a problem or share feedback"
+                    : "Review your feedback"}
                 </h2>
               </div>
             </div>
@@ -256,14 +310,22 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
                 </label>
                 <label>
                   <span>Feedback type</span>
-                  <select value={kind} onChange={(event) => setKind(event.target.value as FeedbackKind)}>
+                  <select
+                    value={kind}
+                    onChange={(event) =>
+                      setKind(event.target.value as FeedbackKind)
+                    }
+                  >
                     <option value="bug">Problem or bug</option>
                     <option value="suggestion">Feature suggestion</option>
                     <option value="feedback">General feedback</option>
                   </select>
                 </label>
                 <label>
-                  <span className="feedback-label-row"><span>Title</span><small>{subject.length}/80</small></span>
+                  <span className="feedback-label-row">
+                    <span>Title</span>
+                    <small>{subject.length}/80</small>
+                  </span>
                   <input
                     ref={subjectRef}
                     value={subject}
@@ -271,42 +333,78 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
                     placeholder="Briefly describe the issue"
                     onChange={(event) => {
                       setSubject(event.target.value);
-                      if (errors.subject) setErrors((current) => ({ ...current, subject: undefined }));
+                      if (errors.subject)
+                        setErrors((current) => ({
+                          ...current,
+                          subject: undefined,
+                        }));
                     }}
                     aria-invalid={Boolean(errors.subject)}
-                    aria-describedby={errors.subject ? "feedback-subject-error" : undefined}
+                    aria-describedby={
+                      errors.subject ? "feedback-subject-error" : undefined
+                    }
                   />
-                  {errors.subject && <small className="field-error" id="feedback-subject-error">{errors.subject}</small>}
+                  {errors.subject && (
+                    <small className="field-error" id="feedback-subject-error">
+                      {errors.subject}
+                    </small>
+                  )}
                 </label>
                 <label>
-                  <span className="feedback-label-row"><span>What happened?</span><small>{details.length}/1000</small></span>
+                  <span className="feedback-label-row">
+                    <span>What happened?</span>
+                    <small>{details.length}/1000</small>
+                  </span>
                   <textarea
                     value={details}
                     maxLength={1000}
                     placeholder="Tell us what you expected and what happened instead"
                     onChange={(event) => {
                       setDetails(event.target.value);
-                      if (errors.details) setErrors((current) => ({ ...current, details: undefined }));
+                      if (errors.details)
+                        setErrors((current) => ({
+                          ...current,
+                          details: undefined,
+                        }));
                     }}
                     aria-invalid={Boolean(errors.details)}
-                    aria-describedby={errors.details ? "feedback-details-error" : undefined}
+                    aria-describedby={
+                      errors.details ? "feedback-details-error" : undefined
+                    }
                   />
-                  {errors.details && <small className="field-error" id="feedback-details-error">{errors.details}</small>}
+                  {errors.details && (
+                    <small className="field-error" id="feedback-details-error">
+                      {errors.details}
+                    </small>
+                  )}
                 </label>
                 <label>
-                  <span>Email for a reply <small>Optional</small></span>
+                  <span>
+                    Email for a reply
+                  </span>
                   <input
                     type="email"
+                    required
                     value={email}
                     placeholder="name@gmail.com"
                     onChange={(event) => {
                       setEmail(event.target.value);
-                      if (errors.email) setErrors((current) => ({ ...current, email: undefined }));
+                      if (errors.email)
+                        setErrors((current) => ({
+                          ...current,
+                          email: undefined,
+                        }));
                     }}
                     aria-invalid={Boolean(errors.email)}
-                    aria-describedby={errors.email ? "feedback-email-error" : undefined}
+                    aria-describedby={
+                      errors.email ? "feedback-email-error" : undefined
+                    }
                   />
-                  {errors.email && <small className="field-error" id="feedback-email-error">{errors.email}</small>}
+                  {errors.email && (
+                    <small className="field-error" id="feedback-email-error">
+                      {errors.email}
+                    </small>
+                  )}
                 </label>
                 <div className="feedback-attachment">
                   <div>
@@ -316,41 +414,114 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
                   {attachment ? (
                     <div className="feedback-file">
                       <span title={attachment.name}>{attachment.name}</span>
-                      <button type="button" onClick={() => setAttachment(null)} aria-label="Remove screenshot">
+                      <button
+                        type="button"
+                        onClick={() => setAttachment(null)}
+                        aria-label="Remove screenshot"
+                      >
                         <Trash2 size={15} aria-hidden="true" />
                       </button>
                     </div>
                   ) : (
                     <label className="button secondary feedback-file-button">
                       <Paperclip size={16} aria-hidden="true" /> Attach
-                      <input type="file" accept="image/jpeg,image/png,image/webp" onChange={chooseAttachment} />
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={chooseAttachment}
+                      />
                     </label>
                   )}
-                  {errors.file && <small className="field-error">{errors.file}</small>}
+                  {errors.file && (
+                    <small className="field-error">{errors.file}</small>
+                  )}
                 </div>
                 <div className="modal-actions feedback-actions">
-                  <button className="button secondary" type="button" onClick={closeWithAnimation}>Cancel</button>
-                  <button className="button primary" type="submit">Review feedback <ArrowRight size={17} aria-hidden="true" /></button>
+                  <button
+                    className="button secondary"
+                    type="button"
+                    onClick={closeWithAnimation}
+                  >
+                    Cancel
+                  </button>
+                  <button className="button primary" type="submit">
+                    Review feedback <ArrowRight size={17} aria-hidden="true" />
+                  </button>
                 </div>
               </form>
             ) : (
               <div className="feedback-review">
+                <div className="feedback-review-status">
+                  <span><Check size={17} aria-hidden="true" /></span>
+                  <div>
+                    <strong>Ready to send</strong>
+                    <p>Check the details below before sending your message.</p>
+                  </div>
+                </div>
                 <dl>
-                  <div><dt>Type</dt><dd>{KIND_LABELS[kind]}</dd></div>
-                  <div><dt>Title</dt><dd>{subject.trim()}</dd></div>
-                  <div className="full"><dt>Details</dt><dd>{details.trim()}</dd></div>
-                  {email && <div><dt>Reply to</dt><dd>{email}</dd></div>}
-                  {attachment && <div><dt>Screenshot</dt><dd>{attachment.name}</dd></div>}
+                  <div className="feedback-review-kind">
+                    <dt>Type</dt>
+                    <dd><span>{KIND_LABELS[kind]}</span></dd>
+                  </div>
+                  <div className="feedback-review-title">
+                    <dt>Title</dt>
+                    <dd>{subject.trim()}</dd>
+                  </div>
+                  <div className="full">
+                    <dt>Details</dt>
+                    <dd>{details.trim()}</dd>
+                  </div>
+                  <div>
+                    <dt>Reply to</dt>
+                    <dd>{email.trim()}</dd>
+                  </div>
+                  {attachment && (
+                    <div>
+                      <dt>Screenshot</dt>
+                      <dd className="feedback-review-file">
+                        <FileImage size={15} aria-hidden="true" /> {attachment.name}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
+                {cooldownRemaining > 0 && (
+                  <div className="feedback-cooldown" role="status">
+                    <Clock3 size={17} aria-hidden="true" />
+                    <span>
+                      Another message can be sent in{" "}
+                      <strong>{formatFeedbackCooldown(cooldownRemaining)}</strong>
+                    </span>
+                  </div>
+                )}
                 {sendError && (
-                  <p className="feedback-submit-error" role="alert">{sendError}</p>
+                  <p className="feedback-submit-error" role="alert">
+                    {sendError}
+                  </p>
                 )}
                 <div className="modal-actions feedback-actions">
-                  <button className="button secondary" type="button" onClick={() => { setSendError(""); setStep("form"); }} disabled={isSending}>
+                  <button
+                    className="button secondary"
+                    type="button"
+                    onClick={() => {
+                      setSendError("");
+                      setStep("form");
+                    }}
+                    disabled={isSending}
+                  >
                     <ArrowLeft size={17} aria-hidden="true" /> Back
                   </button>
-                  <button className="button primary" type="button" onClick={sendFeedback} disabled={isSending}>
-                    <Send size={17} aria-hidden="true" /> {isSending ? "Sending..." : "Send feedback"}
+                  <button
+                    className="button primary"
+                    type="button"
+                    onClick={sendFeedback}
+                    disabled={isSending || cooldownRemaining > 0}
+                  >
+                    <Send size={17} aria-hidden="true" />{" "}
+                    {isSending
+                      ? "Sending..."
+                      : cooldownRemaining > 0
+                        ? `Send again in ${formatFeedbackCooldown(cooldownRemaining)}`
+                        : "Send feedback"}
                   </button>
                 </div>
               </div>

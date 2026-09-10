@@ -183,21 +183,53 @@
 .feedback-review dl {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 9px;
   margin: 0;
 }
 .feedback-review dl > div {
   min-width: 0;
-  padding: 11px 12px;
+  padding: 12px 13px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #f7faf8;
+  background: #fbfcfb;
 }
 .feedback-review dl > .full {
   grid-column: 1 / -1;
+  min-height: 100px;
+  background: #f6faf8;
+}
+.feedback-review-status {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 12px;
+  padding: 11px 13px;
+  border-left: 3px solid var(--primary);
+  background: linear-gradient(90deg, #edf8f3 0%, #f8fbfa 100%);
+}
+.feedback-review-status > span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+}
+.feedback-review-status strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.78rem;
+}
+.feedback-review-status p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.69rem;
+  line-height: 1.4;
 }
 .feedback-review dt {
-  margin-bottom: 3px;
+  margin-bottom: 5px;
   color: var(--muted);
   font-size: 0.65rem;
   font-weight: 700;
@@ -210,6 +242,51 @@
   font-size: 0.78rem;
   line-height: 1.5;
   white-space: pre-wrap;
+}
+.feedback-review-kind dd > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 9px;
+  border: 1px solid #bcdacf;
+  border-radius: 999px;
+  background: #eaf6f1;
+  color: var(--primary-strong);
+  font-size: 0.69rem;
+  font-weight: 750;
+}
+.feedback-review-title dd {
+  font-weight: 700;
+}
+.feedback-review-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.feedback-review-file svg {
+  flex: 0 0 auto;
+  color: var(--primary);
+}
+.feedback-cooldown,
+.feedback-success-cooldown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #6c5722;
+  font-variant-numeric: tabular-nums;
+}
+.feedback-cooldown {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #ead9a9;
+  border-radius: 7px;
+  background: #fff9e9;
+  font-size: 0.71rem;
+}
+.feedback-cooldown svg,
+.feedback-success-cooldown svg {
+  flex: 0 0 auto;
 }
 .feedback-submit-error {
   margin: 12px 0 0;
@@ -248,6 +325,13 @@
 }
 .feedback-success p:not(.section-kicker) {
   margin-top: 8px;
+}
+.feedback-success .feedback-success-cooldown {
+  margin: 13px 0 0;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: #fff8e5;
+  font-size: 0.7rem;
 }
 .feedback-success .button {
   min-width: 120px;
