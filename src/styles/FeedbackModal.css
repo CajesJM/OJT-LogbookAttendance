@@ -43,6 +43,14 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
+.feedback-honeypot {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .feedback-form > label {
   min-width: 0;
   display: grid;
@@ -202,6 +210,17 @@
   font-size: 0.78rem;
   line-height: 1.5;
   white-space: pre-wrap;
+}
+.feedback-submit-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #edc5c5;
+  border-radius: 7px;
+  background: #fff4f4;
+  color: #9f2929;
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.45;
 }
 .feedback-success {
   min-height: 330px;

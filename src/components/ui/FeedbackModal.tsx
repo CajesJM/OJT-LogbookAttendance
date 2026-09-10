@@ -25,6 +25,9 @@ type Props = {
 type FeedbackKind = "bug" | "suggestion" | "feedback";
 type FormErrors = Partial<Record<"subject" | "details" | "email" | "file", string>>;
 
+const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+const SEND_TIMEOUT_MS = 15_000;
+
 const KIND_LABELS: Record<FeedbackKind, string> = {
   bug: "Problem or bug",
   suggestion: "Feature suggestion",
@@ -40,11 +43,16 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [step, setStep] = useState<"form" | "review" | "sent">("form");
   const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [website, setWebsite] = useState("");
   const [isClosing, setIsClosing] = useState(false);
   const subjectRef = useRef<HTMLInputElement>(null);
+  const openedAtRef = useRef(Date.now());
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
+      wasOpenRef.current = false;
       setKind("bug");
       setSubject("");
       setDetails("");
@@ -53,10 +61,16 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
       setErrors({});
       setStep("form");
       setIsSending(false);
+      setSendError("");
+      setWebsite("");
       setIsClosing(false);
       return;
     }
 
+    if (!wasOpenRef.current) {
+      openedAtRef.current = Date.now();
+      wasOpenRef.current = true;
+    }
     const focusTimer = window.setTimeout(() => subjectRef.current?.focus(), 80);
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !isSending) closeWithAnimation();
@@ -103,20 +117,83 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
       setErrors((current) => ({ ...current, file: "Choose a JPG, PNG, or WebP image." }));
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors((current) => ({ ...current, file: "Choose an image smaller than 5 MB." }));
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setErrors((current) => ({ ...current, file: "Choose an image smaller than 2 MB." }));
       return;
     }
     setAttachment(file);
     setErrors((current) => ({ ...current, file: undefined }));
   }
 
-  function simulateSend() {
+  function fileToBase64(file: File) {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = typeof reader.result === "string" ? reader.result : "";
+        const separatorIndex = result.indexOf(",");
+        if (separatorIndex < 0) {
+          reject(new Error("The screenshot could not be read."));
+          return;
+        }
+        resolve(result.slice(separatorIndex + 1));
+      };
+      reader.onerror = () => reject(new Error("The screenshot could not be read."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function sendFeedback() {
     setIsSending(true);
-    window.setTimeout(() => {
+    setSendError("");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
+
+    try {
+      const attachmentPayload = attachment
+        ? {
+            content: await fileToBase64(attachment),
+            filename: attachment.name,
+            contentType: attachment.type,
+            size: attachment.size,
+          }
+        : undefined;
+      const submissionId = typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind,
+          subject: subject.trim(),
+          details: details.trim(),
+          email: email.trim(),
+          attachment: attachmentPayload,
+          website,
+          startedAt: openedAtRef.current,
+          submissionId,
+          pageUrl: window.location.href,
+        }),
+        signal: controller.signal,
+      });
+      const result = await response.json().catch(() => null) as { error?: string } | null;
+      if (!response.ok) {
+        throw new Error(result?.error || "Feedback could not be sent. Please try again.");
+      }
+
       setIsSending(false);
       setStep("sent");
-    }, 650);
+    } catch (error) {
+      const message = error instanceof DOMException && error.name === "AbortError"
+        ? "The request took too long. Check your connection and try again."
+        : error instanceof Error
+          ? error.message
+          : "Feedback could not be sent. Please try again.";
+      setSendError(message);
+      setIsSending(false);
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }
 
   if (!open) return null;
@@ -149,7 +226,7 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
             <span><Check size={25} aria-hidden="true" /></span>
             <p className="section-kicker">Feedback received</p>
             <h2 id="feedback-title">Thank you for helping us improve.</h2>
-            <p>Your report has been added to the feedback queue.</p>
+            <p>Your message was sent successfully.</p>
             <button className="button primary" type="button" onClick={closeWithAnimation}>
               Done
             </button>
@@ -168,6 +245,15 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
 
             {step === "form" ? (
               <form className="feedback-form" onSubmit={review} noValidate>
+                <label className="feedback-honeypot" aria-hidden="true">
+                  <span>Website</span>
+                  <input
+                    value={website}
+                    onChange={(event) => setWebsite(event.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </label>
                 <label>
                   <span>Feedback type</span>
                   <select value={kind} onChange={(event) => setKind(event.target.value as FeedbackKind)}>
@@ -225,7 +311,7 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
                 <div className="feedback-attachment">
                   <div>
                     <strong>Screenshot</strong>
-                    <span>Optional image, up to 5 MB</span>
+                    <span>Optional image, up to 2 MB</span>
                   </div>
                   {attachment ? (
                     <div className="feedback-file">
@@ -256,11 +342,14 @@ export function FeedbackModal({ open, defaultEmail, onClose }: Props) {
                   {email && <div><dt>Reply to</dt><dd>{email}</dd></div>}
                   {attachment && <div><dt>Screenshot</dt><dd>{attachment.name}</dd></div>}
                 </dl>
+                {sendError && (
+                  <p className="feedback-submit-error" role="alert">{sendError}</p>
+                )}
                 <div className="modal-actions feedback-actions">
-                  <button className="button secondary" type="button" onClick={() => setStep("form")} disabled={isSending}>
+                  <button className="button secondary" type="button" onClick={() => { setSendError(""); setStep("form"); }} disabled={isSending}>
                     <ArrowLeft size={17} aria-hidden="true" /> Back
                   </button>
-                  <button className="button primary" type="button" onClick={simulateSend} disabled={isSending}>
+                  <button className="button primary" type="button" onClick={sendFeedback} disabled={isSending}>
                     <Send size={17} aria-hidden="true" /> {isSending ? "Sending..." : "Send feedback"}
                   </button>
                 </div>
