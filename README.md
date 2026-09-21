@@ -9,5 +9,5 @@ A React + TypeScript web app for OJT students who want a personal logbook with l
 - Optional fields for reflection, and signature
 - Profile page for student and OJT details
 - IndexedDB storage
-- Backup export and import for moving records to another device
+- Backup export and import for moving records to another device (file type .json)
 - Printable OJT report
